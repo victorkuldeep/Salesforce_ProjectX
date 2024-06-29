@@ -1,0 +1,13 @@
+<aura:component implements="lightning:actionOverride,force:hasRecordId" access="global">
+    <aura:attribute name="recordId" type="String" />
+    <aura:attribute name="isModalOpen" type="Boolean" default="false"/>
+    <aura:attribute name="pageReference" type="Object"/>
+    <lightning:overlayLibrary aura:id="overlayLib"/>
+    <lightning:navigation aura:id="navService"/>
+    
+    <aura:handler name="init" value="{!this}" action="{!c.handleInit}" />
+    
+    <aura:if isTrue="{!v.isModalOpen}">
+        <div aura:id="lwcContainer"></div>
+    </aura:if>
+</aura:component>
