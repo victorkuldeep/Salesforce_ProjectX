@@ -93,21 +93,17 @@
                     </template>
                     <!-- Step 2: Contact Creation Form -->
                     <template if:true={showContactForm}>
-                        <lightning-record-edit-form object-api-name="Contact" onsuccess={handleContactSuccess}>
-                            <lightning-messages></lightning-messages>
-                            
-                            <!-- Dynamically generate input fields -->
-                            <template for:each={fieldList} for:item="field">
-                                <lightning-input-field key={field.fieldName} field-name={field.fieldName}></lightning-input-field>
-                            </template>
-                            
-                            <lightning-input-field field-name="AccountId" value={accountId} disabled = true></lightning-input-field>
-                            <!-- Hidden input field to store the selected contact ID -->
-                            <lightning-input-field field-name="RecordTypeId" value={selectedRecordTypeId} class="slds-hide"></lightning-input-field>
-                            <div class="slds-m-top_small slds-grid slds-grid_align-end">
-                                <lightning-button variant="brand" type="submit" label="Save"></lightning-button>
-                            </div>
-                        </lightning-record-edit-form>
+                    
+                        <lightning-record-form
+                            object-api-name="Contact"
+                            record-type-id={selectedRecordTypeId}
+                            layout-type="Full"
+                            columns="2"
+                            mode="edit"
+                            onsuccess={handleContactSuccess}
+                            oncancel={handleContactCancel}
+                        >
+                        </lightning-record-form>
                     </template>
                 </div>
             </div>
