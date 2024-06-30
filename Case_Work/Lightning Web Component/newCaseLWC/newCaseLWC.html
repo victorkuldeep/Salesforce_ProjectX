@@ -2,7 +2,7 @@
 @description       : 
 @author            : Kuldeep Singh
 @group             : 
-@last modified on  : 06-29-2024
+@last modified on  : 06-30-2024
 @last modified by  : Kuldeep Singh
 -->
 <template>
@@ -11,28 +11,33 @@
         <div class="slds-grid slds-gutters slds-m-around_xx-small">
             <div class="slds-col slds-size_1-of-2">
                 <!-- Add fields for left column -->
-                <lightning-input-field field-name="Subject" required></lightning-input-field>
-                <lightning-input-field field-name="Origin" required></lightning-input-field>
-                <lightning-input-field field-name="Priority"></lightning-input-field>
-                <lightning-input-field field-name="Reason" required></lightning-input-field>
-                <lightning-output-field field-name="OwnerId"></lightning-output-field>
+                <lightning-input-field field-name="Subject" required disabled={isReadOnly}></lightning-input-field>
+                <lightning-input-field field-name="Origin" required disabled={isReadOnly}></lightning-input-field>
+                <lightning-input-field field-name="Priority" disabled={isReadOnly}></lightning-input-field>
+                <lightning-input-field field-name="Reason" required disabled={isReadOnly}></lightning-input-field>
+                <lightning-output-field field-name="OwnerId" disabled={isReadOnly}></lightning-output-field>
             </div>
             <div class="slds-col slds-size_1-of-2">
                 <!-- Add fields for right column -->
-                <lightning-input-field field-name="ParentId"></lightning-input-field>
-                <lightning-input-field field-name="Status" required></lightning-input-field>
-                <lightning-input-field field-name="Description"></lightning-input-field>
-                <lightning-input-field field-name="AccountId" required onchange={handleAccountChange}></lightning-input-field>
-                <lightning-combobox label="Contact" value={contactId} options={contactOptions} onchange={handleContactChange}></lightning-combobox>
+                <lightning-input-field field-name="ParentId" disabled={isReadOnly}></lightning-input-field>
+                <lightning-input-field field-name="Status" required disabled={isReadOnly}></lightning-input-field>
+                <lightning-input-field field-name="Description" disabled={isReadOnly}></lightning-input-field>
+                <lightning-input-field field-name="AccountId" required disabled={isReadOnly} onchange={handleAccountChange}></lightning-input-field>
+                <lightning-combobox label="Contact" value={contactId} options={contactOptions} onchange={handleContactChange} disabled={isReadOnly}></lightning-combobox>
                 <!-- Hidden input field to store the selected contact ID -->
-                <lightning-input-field field-name="ContactId" value={contactId} class="slds-hide"></lightning-input-field>
+                <lightning-input-field field-name="ContactId" value={contactId} class="slds-hide" disabled={isReadOnly}></lightning-input-field>
                 <div class="slds-m-top_medium">
-                    <lightning-button-icon icon-name="utility:add" alternative-text="New Contact" onclick={handleNewContactClick} class="slds-m-left_x_small"></lightning-button-icon> &nbsp;Create New Contact
+                    <lightning-button-icon icon-name="utility:add" alternative-text="New Contact" onclick={handleNewContactClick} class="slds-m-left_x_small" disabled={isReadOnly}></lightning-button-icon> &nbsp;Create New Contact
                 </div>
             </div>
         </div>
         <div class="slds-m-around_medium slds-grid slds-grid_align-end">
-            <lightning-button class="slds-m-around_medium" variant="brand" type="submit" name="submit" label="Submit"></lightning-button>
+            <template if:true={isReadOnly}>
+                <lightning-button-icon icon-name="utility:edit" alternative-text="Edit" onclick={editHandler} class="slds-m-around_x-small"></lightning-button-icon>
+            </template>
+            <template if:false={isReadOnly}>
+                <lightning-button class="slds-m-around_x-small" variant="brand" type="submit" name="submit" label="Submit" disabled={isReadOnly}></lightning-button>
+            </template>
         </div>
     </lightning-record-edit-form>
 
