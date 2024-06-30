@@ -6,7 +6,7 @@ import getContacts from '@salesforce/apex/CaseController.getContacts';
 import getRecordTypes from '@salesforce/apex/ContactController.getRecordTypes';
 import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 import CONTACT_OBJECT from '@salesforce/schema/Contact';
-import { leftColumnFields, rightColumnFields, recordTypeContactFieldMap }  from './fieldMapper';
+import { leftColumnFields, rightColumnFields }  from './fieldMapper';
 
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     @api recordId;
@@ -22,7 +22,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     selectedRecordTypeName;
     showRecordTypeSelection = true;
     showContactForm = false;
-    recordTypeFieldMap = recordTypeContactFieldMap
     
     @wire(getObjectInfo, { objectApiName: CONTACT_OBJECT })
     objectInfo;
@@ -71,11 +70,8 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         
         this.selectedRecordTypeId = event.detail.value;
         const selectedRecordType = this.recordTypeOptions.find((rt) => rt.value == this.selectedRecordTypeId);
-        console.log(JSON.stringify(selectedRecordType))
         this.selectedRecordTypeName = selectedRecordType.label;
-        console.log(this.selectedRecordTypeName);
-        this.fieldList = this.recordTypeFieldMap[selectedRecordType.label] || [];
-        console.log('this.fieldList => ' + this.fieldList);
+
     }
 
     get leftFields() {
@@ -173,6 +169,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         this.showSuccessToast('Contact created successfully');
         this.closeModal();
         this.fetchContacts(); // Refresh contacts after new contact creation
+    }
+    handleContactCancel(event){
+        this.closeModal();
     }
 
     handleNext() {
