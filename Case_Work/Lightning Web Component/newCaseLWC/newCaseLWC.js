@@ -6,6 +6,7 @@ import getContacts from '@salesforce/apex/CaseController.getContacts';
 import getRecordTypes from '@salesforce/apex/ContactController.getRecordTypes';
 import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 import CONTACT_OBJECT from '@salesforce/schema/Contact';
+import { leftColumnFields, rightColumnFields, recordTypeContactFieldMap }  from './fieldMapper';
 
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     @api recordId;
@@ -21,40 +22,14 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     selectedRecordTypeName;
     showRecordTypeSelection = true;
     showContactForm = false;
-    // Static map to maintain record type names and their corresponding fields
-    recordTypeFieldMap = {
-        'EMEA': [
-            { fieldName: 'FirstName' },
-            { fieldName: 'LastName' },
-            { fieldName: 'Email' },
-            { fieldName: 'Phone' },
-            // Add more fields specific to RecordTypeName1
-        ],
-        'US': [
-            { fieldName: 'FirstName' },
-            { fieldName: 'LastName' },
-            { fieldName: 'Title' },
-            { fieldName: 'Department' },
-            // Add more fields specific to RecordTypeName2
-        ],
-        'Default': [
-            { fieldName: 'FirstName' },
-            { fieldName: 'LastName' },
-            { fieldName: 'Title' },
-            { fieldName: 'Department' },
-            // Add more fields specific to RecordTypeName2
-        ]
-        // Add more record types and their fields as needed
-    };
-
+    recordTypeFieldMap = recordTypeContactFieldMap
+    
     @wire(getObjectInfo, { objectApiName: CONTACT_OBJECT })
     objectInfo;
 
     @wire(getRecord, { recordId: '$recordId', fields: ['Case.AccountId','Case.ContactId'] })
-    wiredAccount({ error, data }) {
+    wiredAccount({ error, data }) { 
         if (data) {
-            console.log('dta' + data.fields.AccountId.value);
-            console.log('dta' + data.fields.ContactId.value);
             this.accountId = data.fields.AccountId.value;
             this.contactId = data.fields.ContactId.value;
             this.fetchContacts();
@@ -76,6 +51,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     fetchRecordTypes() {
+        
         getRecordTypes()
             .then(result => {
                 this.recordTypeOptions = result.map(rt => {
@@ -92,6 +68,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     handleRecordTypeChange(event) {
+        
         this.selectedRecordTypeId = event.detail.value;
         const selectedRecordType = this.recordTypeOptions.find((rt) => rt.value == this.selectedRecordTypeId);
         console.log(JSON.stringify(selectedRecordType))
@@ -101,7 +78,35 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         console.log('this.fieldList => ' + this.fieldList);
     }
 
+    get leftFields() {
+        return leftColumnFields.map(field => ({
+            ...field,
+            disabled: this.isReadOnly
+        }));
+    }
+
+    get rightFields() {
+        return rightColumnFields.map(field => ({
+            ...field,
+            disabled: this.isReadOnly
+        }));
+    }
+
+    handleFieldChange(event) {
+        
+        console.dir(event.target);
+        
+        if (event.target.fieldName === 'AccountId') {
+            this.handleAccountChange(event);
+        }
+        if (event.target.label === 'Contact') {
+            this.handleContactChange(event);
+        }
+        // Add other field-specific handlers if needed
+    }
+
     handleAccountChange(event) {
+        
         this.accountId = event.target.value;
         this.contactId = null; // Reset selected contact when changing account
         this.selectedRecordTypeId = null;
@@ -110,9 +115,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     fetchContacts() {
-        console.log('this.contactOptions before clear' + this.contactOptions)
+        
         this.contactOptions = []
-        console.log(this.accountId)
+        
         if (this.accountId) {
             getContacts({ accountId: this.accountId })
                 .then(result => {
@@ -120,7 +125,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                         label: contact.Name,
                         value: contact.Id
                     }));
-                    console.log('this.contactOptions after re-fetch' + this.contactOptions)
                 })
                 .catch(error => {
                     this.showErrorToast(error.body.message);
@@ -135,6 +139,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     handleNewContactClick() {
+        
         this.isModalOpen = true; // Open the modal when clicking the "+" icon
         this.selectedRecordTypeId = null;
         this.selectedRecordTypeName = null;
@@ -151,8 +156,10 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     handleSuccess(event) {
+        
         const caseId = event.detail.id;
         const successMessage = this.recordId ? 'Case updated successfully' : 'Case created successfully';
+        
         this.dispatchEvent(new ShowToastEvent({
             title: 'Success',
             message: successMessage,
@@ -162,13 +169,14 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     handleContactSuccess(event) {
+        
         this.showSuccessToast('Contact created successfully');
         this.closeModal();
         this.fetchContacts(); // Refresh contacts after new contact creation
     }
 
     handleNext() {
-        console.log('Record Type Id - ' + this.selectedRecordTypeId);
+        
         if (this.selectedRecordTypeId) {
             this.showRecordTypeSelection = false;
             this.showContactForm = true;
@@ -180,6 +188,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     showSuccessToast(message) {
+        
         this.dispatchEvent(new ShowToastEvent({
             title: 'Success',
             message: message,
@@ -188,6 +197,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     showErrorToast(message) {
+        
         this.dispatchEvent(new ShowToastEvent({
             title: 'Error',
             message: message,
@@ -196,8 +206,11 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     navigateToRecord(recordId) {
+        
         this[NavigationMixin.Navigate]({
+        
             type: 'standard__recordPage',
+            
             attributes: {
                 recordId: recordId,
                 objectApiName: 'Case',
