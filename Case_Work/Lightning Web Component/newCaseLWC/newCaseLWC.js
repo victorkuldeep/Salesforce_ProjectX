@@ -9,6 +9,8 @@ import CONTACT_OBJECT from '@salesforce/schema/Contact';
 
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     @api recordId;
+    @api isReadOnly
+    @api objectApiName;
     @track contactOptions = [];
     @track fieldList = [];
     @track recordTypeOptions = [];
@@ -35,6 +37,13 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             { fieldName: 'Department' },
             // Add more fields specific to RecordTypeName2
         ],
+        'Default': [
+            { fieldName: 'FirstName' },
+            { fieldName: 'LastName' },
+            { fieldName: 'Title' },
+            { fieldName: 'Department' },
+            // Add more fields specific to RecordTypeName2
+        ]
         // Add more record types and their fields as needed
     };
 
@@ -57,6 +66,13 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     connectedCallback() {
         // Fetch record types
         this.fetchRecordTypes();
+        if(this.isReadOnly == undefined){
+            this.isReadOnly = true;
+        }
+    }
+
+    editHandler(){
+        this.isReadOnly = false;
     }
 
     fetchRecordTypes() {
@@ -136,9 +152,10 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     handleSuccess(event) {
         const caseId = event.detail.id;
+        const successMessage = this.recordId ? 'Case updated successfully' : 'Case created successfully';
         this.dispatchEvent(new ShowToastEvent({
             title: 'Success',
-            message: 'Case created successfully',
+            message: successMessage,
             variant: 'success'
         }));
         this.navigateToRecord(caseId);

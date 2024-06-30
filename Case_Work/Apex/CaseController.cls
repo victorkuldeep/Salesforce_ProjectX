@@ -1,10 +1,3 @@
-/**
- * @description       : 
- * @author            : Kuldeep Singh
- * @group             : 
- * @last modified on  : 06-29-2024
- * @last modified by  : Kuldeep Singh
-**/
 public with sharing class CaseController {
     @AuraEnabled(cacheable=true)
     public static List<Account> getAccountOptions() {
@@ -21,5 +14,9 @@ public with sharing class CaseController {
             contactId.add(arc.Contact.Id);
         }
         return [SELECT Id, Name FROM Contact WHERE Id = :contactId];
+    }
+    @AuraEnabled
+    public static Case getCaseDetails(Id caseId) {
+        return [SELECT Id, CaseNumber, Subject  FROM Case WHERE Id = :caseId LIMIT 1];
     }
 }
