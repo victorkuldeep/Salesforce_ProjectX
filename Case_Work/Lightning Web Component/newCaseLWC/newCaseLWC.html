@@ -2,113 +2,107 @@
 @description       : 
 @author            : Kuldeep Singh
 @group             : 
-@last modified on  : 06-30-2024
+@last modified on  : 07-04-2024
 @last modified by  : Kuldeep Singh
 -->
 <template>
-<div style="background-color: #ffffff; border: none">
-    <lightning-record-edit-form object-api-name="Case" record-id={recordId} onsuccess={handleSuccess} onerror={handleError}>
-        <div class="slds-grid slds-gutters slds-m-around_xx-small">
-            <div class="slds-col slds-size_1-of-2">
-                <!-- Render left column fields -->
-            <template for:each={leftFields} for:item="field">
-                <template if:true={field.outputField}>
-                    <lightning-output-field key={field.fieldName} field-name={field.fieldName} disabled={field.disabled}></lightning-output-field>
-                </template>
-                <template if:false={field.outputField}>
-                    <lightning-input-field 
-                        key={field.fieldName} 
-                        field-name={field.fieldName} 
-                        required={field.required} 
-                        disabled={field.disabled} 
-                        onchange={handleFieldChange}
-                    ></lightning-input-field>
-                </template>
-            </template>
-            </div>
-            <div class="slds-col slds-size_1-of-2">
-                <!-- Render right column fields -->
-                <template for:each={rightFields} for:item="field">
-                    <template if:true={field.outputField}>
-                        <lightning-output-field key={field.fieldName} field-name={field.fieldName} disabled={field.disabled}></lightning-output-field>
-                    </template>
-                    <template if:false={field.outputField}>
-                        <lightning-input-field 
-                            key={field.fieldName} 
-                            field-name={field.fieldName} 
-                            required={field.required} 
-                            disabled={field.disabled} 
-                            onchange={handleFieldChange}
-                        ></lightning-input-field>
-                    </template>
-                    <template if:true={field.isCombobox}>
-                        <lightning-combobox 
-                            key={field.label} 
-                            label={field.label} 
-                            value={contactId} 
-                            options={contactOptions} 
-                            onchange={handleFieldChange} 
-                            disabled={field.disabled}
-                        ></lightning-combobox>
-                    </template>
-                </template>
-                
-                <!-- Hidden input field to store the selected contact ID -->
-                <lightning-input-field field-name="ContactId" value={contactId} class="slds-hide" disabled={isReadOnly}></lightning-input-field>
-                
-                <div class="slds-m-top_medium">
-                    <lightning-button-icon icon-name="utility:add" alternative-text="New Contact" onclick={handleNewContactClick} class="slds-m-left_x_small" disabled={isReadOnly}></lightning-button-icon> &nbsp;Create New Contact
-                </div>
-            </div>
-        </div>
-        <div class="slds-m-around_medium slds-grid slds-grid_align-end">
-            <template if:true={isReadOnly}>
-                <lightning-button-icon icon-name="utility:edit" alternative-text="Edit" onclick={editHandler} class="slds-m-around_x-small"></lightning-button-icon>
-            </template>
-            <template if:false={isReadOnly}>
-                <lightning-button class="slds-m-around_x-small" variant="brand" type="submit" name="submit" label="Submit" disabled={isReadOnly}></lightning-button>
-            </template>
-        </div>
-    </lightning-record-edit-form>
+    <div style="background-color: #ffffff; border: none">
+        
+        <lightning-record-edit-form object-api-name="Case" onsuccess={handleSuccess} onsubmit={handleFormSubmit}>
 
-    <!-- Modal for New Contact -->
-    <template if:true={isModalOpen}>
-        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
-                <header class="slds-modal__header">
-                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
-                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
-                        <span class="slds-assistive-text">Close</span>
-                    </button>
-                    <h2 class="slds-text-heading_medium">New Contact {selectedRecordTypeName}</h2>
-                </header>
-                <div class="slds-modal__content slds-p-around_medium">
-                    <!-- Step 1: Record Type Selection -->
-                    <template if:true={showRecordTypeSelection}>
-                        <lightning-combobox label="Select Record Type" value={selectedRecordTypeId} options={recordTypeOptions} onchange={handleRecordTypeChange}></lightning-combobox>
-                        <div class="slds-m-top_small slds-grid slds-grid_align-end">
-                            <lightning-button variant="neutral" label="Cancel" onclick={closeModal} class="slds-m-right_small"></lightning-button>
-                            <lightning-button variant="brand" label="Next" onclick={handleNext} disabled={isNextButtonDisabled}></lightning-button>
-                        </div>
-                    </template>
-                    <!-- Step 2: Contact Creation Form -->
-                    <template if:true={showContactForm}>
-                    
-                        <lightning-record-form
-                            object-api-name="Contact"
-                            record-type-id={selectedRecordTypeId}
-                            layout-type="Full"
-                            columns="2"
-                            mode="edit"
-                            onsuccess={handleContactSuccess}
-                            oncancel={handleContactCancel}
-                        >
-                        </lightning-record-form>
-                    </template>
+            <!-- Show spinner when isLoading is true -->
+            <template if:true={isLoading}>
+                <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+            </template>
+
+            <template for:each={sections} for:item="section">
+                <div key={section.sectionName} class="slds-section">
+                    <h2 class="slds-section__title">{section.sectionName}</h2>
+                    <div class="slds-grid slds-wrap">
+                        <template for:each={section.columns} for:item="column">
+                            <div key={column.key} class="slds-col slds-size_1-of-2">
+                                <template for:each={column.fields} for:item="field">
+                                    <lightning-input-field
+                                        key={field.apiName}
+                                        field-name={field.apiName}
+                                        required={field.required}
+                                        onchange={fieldChangeHandler}>
+                                    </lightning-input-field>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
                 </div>
+            </template>
+            <!-- Account And Contact Section -->
+            <h2 class="slds-section__title">{lastSection}</h2>
+            <lightning-input-field field-name="AccountId" required disabled={isReadOnly} onchange={handleFieldChange}></lightning-input-field>
+            <lightning-combobox label="Contact" value={contactId} options={contactOptions} onchange={handleFieldChange} disabled={isReadOnly}></lightning-combobox>
+            <!-- Hidden input field to store the selected contact ID -->
+            <lightning-input-field field-name="ContactId" value={contactId} class="slds-hide" disabled={isReadOnly}></lightning-input-field>
+            <div class="slds-m-top_medium">
+                <lightning-button-icon icon-name="utility:add" alternative-text="New Contact" onclick={handleNewContactClick} class="slds-m-left_x_small" disabled={isContactDisabled}></lightning-button-icon> &nbsp;Create New Contact
             </div>
-        </section>
-        <div class="slds-backdrop slds-backdrop_open"></div>
-    </template>
-</div>
+            <div class="slds-m-around_medium slds-grid slds-grid_align-end">
+                <template if:true={isReadOnly}>
+                    <lightning-button-icon icon-name="utility:edit" alternative-text="Edit" onclick={editHandler} class="slds-m-around_x-small"></lightning-button-icon>
+                </template>
+                <template if:false={isReadOnly}>
+                    <lightning-button class="slds-m-around_x-small" variant="brand" type="submit" name="submit" label="Submit" disabled={isReadOnly}></lightning-button>
+                </template>
+            </div>
+        </lightning-record-edit-form>
+
+        <!-- Modal for New Contact -->
+        
+        <template if:true={isModalOpen}>
+            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title="Close" onclick={closeModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close"
+                                size="small"></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 class="slds-text-heading_medium">New Contact: {selectedRecordTypeName}</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <!-- Step 1: Contact Creation Form -->
+                        <lightning-record-edit-form object-api-name="Contact" record-type-id={selectedRecordTypeId}
+                            onsuccess={handleContactSuccess} oncancel={handleContactCancel}>
+                            <div class="slds-grid slds-gutters slds-m-around_xx-small">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <template for:each={leftColumnFields} for:item="field">
+                                        <lightning-input-field
+                                            key={field.fieldName}
+                                            field-name={field.fieldName}
+                                            required={field.required}
+                                            disabled={field.disabled}
+                                        ></lightning-input-field>
+                                    </template>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <template for:each={rightColumnFields} for:item="field">
+                                        <lightning-input-field
+                                            key={field.fieldName}
+                                            field-name={field.fieldName}
+                                            required={field.required}
+                                            disabled={field.disabled}
+                                        ></lightning-input-field>
+                                    </template>
+                                    <lightning-input-field field-name="AccountId" value={accountId} disabled = true></lightning-input-field>
+                                </div>
+                            </div>
+                            <div class="slds-m-top_small slds-grid slds-grid_align-end">
+                                <lightning-button variant="neutral" type="button" label="Cancel" onclick={handleContactCancel} class="slds-m-right_small"></lightning-button>
+                                <lightning-button variant="brand" type="submit" label="Save"></lightning-button>
+                            </div>            
+                        </lightning-record-edit-form>
+                    </div>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </div>
 </template>
