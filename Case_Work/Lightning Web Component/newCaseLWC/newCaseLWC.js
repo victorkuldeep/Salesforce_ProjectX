@@ -17,7 +17,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     @track contactOptions = [];
     @track previousPicklistValue = '';
     @track currentPicklistValue = '';
-
+    @track recordsData
     @track sections = fieldConfig.map(section => ({
         ...section,
         columns: section.columns.map((column, columnIndex) => ({
@@ -35,6 +35,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     fieldConfig = fieldConfig
     valueChangeMapper = valueChangeMapper
     lastSection = lastSection
+    initialLoadStatus = false
     
     @wire(getObjectInfo, { objectApiName: CONTACT_OBJECT })
     objectInfo;
@@ -51,7 +52,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     connectedCallback() {
-        console.log('Connected Callback Lifecycle Hook fired')
+        console.log('Connected Callback Lifecycle Hook')
         // Fetch record types
         this.fetchRecordTypes();
 
@@ -68,26 +69,73 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 fields: column
             }))
         }));
+
         // BUGFIX: To Trigger Reactivity on User Interface and clears previous object state
         this.sections = JSON.parse(JSON.stringify(this.sections))
+    }
+
+    // BUGFIX: Rendering of auto - conditional fields in case of Edit mode
+    handleOnLoad(event) {
+
+        if(!this.recordId && !this.initialLoadStatus){
+            const fieldsData = event.detail.record.fields
+            Object.keys(fieldsData).forEach(apiName => { 
+        
+                if(this.valueChangeMapper[apiName]){
+                    this.recordsData = { ...this.recordsData, [apiName]: fieldsData[apiName].value }
+                    if(fieldsData[apiName].value != null){
+                        const fieldsDataToAdd = this.valueChangeMapper[apiName][0][fieldsData[apiName].value]
+                        this.addFieldsToColumn(this.sections[0].columns[1],fieldsDataToAdd)
+                    }
+                }
+            });
+            this.initialLoadStatus = true
+            console.log(JSON.stringify(this.recordsData))
+        }
+        if(this.recordId && !this.initialLoadStatus){
+        
+            const fieldsData = event.detail.records[this.recordId].fields
+        
+            Object.keys(fieldsData).forEach(apiName => { 
+        
+                if(this.valueChangeMapper[apiName]){
+        
+                    const fieldsDataToAdd = this.valueChangeMapper[apiName][0][fieldsData[apiName].value]
+                    this.addFieldsToColumn(this.sections[0].columns[1],fieldsDataToAdd)
+                    this.recordsData = { ...this.recordsData, [apiName]: fieldsData[apiName].value }
+                }
+            });
+            this.initialLoadStatus = true
+        }
     }
 
     // Dynamic Form JS Handlers Begin
 
     fieldChangeHandler(event){
 
-        this.fieldName = event.target.fieldName;
-        this.fieldValue = event.target.value;
-        
-        console.log(`Data is ${this.fieldName} and ${this.fieldValue} `);
         // Check if onChange is defined in value change mapper static data structure
         if(this.valueChangeMapper[event.target.fieldName]){
+
+            if(this.recordsData == undefined || this.recordsData[event.target.fieldName] == undefined){
             
-            this.previousPicklistValue = this.currentPicklistValue;
-            this.currentPicklistValue = event.detail.value;
+                this.recordsData = { ...this.recordsData, [event.target.fieldName]: event.target.value }
+            }
+            
+            if(this.recordsData){
+                
+                // Deep copy the data
+                this.previousPicklistValue = JSON.parse(JSON.stringify(this.recordsData[event.target.fieldName]))
+                this.currentPicklistValue = event.detail.value
+                
+            }else{
+
+                this.previousPicklistValue = this.currentPicklistValue
+                this.currentPicklistValue = event.detail.value
+            }
 
             console.log(`Current Value is ${this.currentPicklistValue} and Previous Value is ${this.previousPicklistValue}`)
             
+            this.recordsData[event.target.fieldName] = event.detail.value
             const fieldsData = this.valueChangeMapper[event.target.fieldName][0][this.currentPicklistValue]
             const fieldsDataToRemove = this.valueChangeMapper[event.target.fieldName][0][this.previousPicklistValue]
             
@@ -99,18 +147,18 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     // Method to remove fields from a column
     removeFields(column, fieldsToRemove) {
-        console.log('Fields Removal Process Initiated')
+        
         column.fields = column.fields.filter(field => {
             // Check if the field should be kept (not in fieldsToRemove)
-            return !fieldsToRemove.some(removeField => removeField.apiName === field.apiName);
+            return !fieldsToRemove.some(removeField => removeField.apiName === field.apiName)
         });
     }
     addFieldsToColumn(column, fields) {
-        console.log('Fields Addition Process Initiated')
+        
         fields.forEach(field => {
             // Check if the field already exists
             if (!column.fields.some(existingField => existingField.apiName === field.apiName)) {
-                column.fields.push(field);
+                column.fields.push(field)
             }
         });
     }
@@ -118,59 +166,59 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     // Dynamic Form JS Handlers End
 
     editHandler(){
-        this.isReadOnly = false;
+        this.isReadOnly = false
     }
     
     fetchRecordTypes() {
         
         getRecordTypeByName({recordTypeName:'US'})
             .then(result =>{
-                this.selectedRecordTypeId = result[0] ? result[0].Id : null;
-                this.selectedRecordTypeName = result[0] ? result[0].Name : null;
+                this.selectedRecordTypeId = result[0] ? result[0].Id : null
+                this.selectedRecordTypeName = result[0] ? result[0].Name : null
             })
     }
 
     get leftColumnFields() {
-        return this.distributeFields().left;
+        return this.distributeFields().left
     }
 
     get rightColumnFields() {
-        return this.distributeFields().right;
+        return this.distributeFields().right
     }
 
     distributeFields() {
-        const fields = fieldMapperContact.default;
-        const left = [];
-        const right = [];
+        const fields = fieldMapperContact.default
+        const left = []
+        const right = []
         fields.forEach((field, index) => {
             if (index % 2 === 0) {
-                left.push(field);
+                left.push(field)
             } else {
-                right.push(field);
+                right.push(field)
             }
         });
-        return { left, right };
+        return { left, right }
     }
 
     handleFieldChange(event) {
         
-        console.dir(event.target);
+        console.dir(event.target)
         
         if (event.target.fieldName === 'AccountId') {
             this.handleAccountChange(event);
         }
         if (event.target.label === 'Contact') {
-            this.handleContactChange(event);
+            this.handleContactChange(event)
         }
         // Add other field-specific handlers if needed
     }
 
     handleAccountChange(event) {
         
-        this.accountId = event.target.value;
-        this.contactId = null; // Reset selected contact when changing account
-        this.fetchContacts();
-        this.isContactDisabled = this.accountId ? false : true;
+        this.accountId = event.target.value
+        this.contactId = null // Reset selected contact when changing account
+        this.fetchContacts()
+        this.isContactDisabled = this.accountId ? false : true
     }
 
     fetchContacts() {
@@ -186,58 +234,58 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                     }));
                 })
                 .catch(error => {
-                    this.showErrorToast(error.body.message);
+                    this.showErrorToast(error.body.message)
                 });
         } else {
-            this.contactOptions = []; // Clear contact options if no account selected
+            this.contactOptions = [] // Clear contact options if no account selected
         }
     }
 
     handleContactChange(event) {
-        this.contactId = event.detail.value;
+        this.contactId = event.detail.value
     }
 
     handleNewContactClick() {
         
-        this.isModalOpen = true; // Open the modal when clicking the "+" icon
+        this.isModalOpen = true // Open the modal when clicking the "+" icon
     }
 
     closeModal() {
-        this.isModalOpen = false;
+        this.isModalOpen = false
     }
 
     handleFormSubmit(event){
-        event.preventDefault();
-        this.isLoading = true;
-        const fields = event.detail.fields; 
+        event.preventDefault()
+        this.isLoading = true
+        const fields = event.detail.fields
         // Submit logic (e.g., saving the record)
-        this.template.querySelector('lightning-record-edit-form').submit(fields);
+        this.template.querySelector('lightning-record-edit-form').submit(fields)
     }
     handleSuccess(event) {
         
-        const caseId = event.detail.id;
-        const successMessage = this.recordId ? 'Case updated successfully' : 'Case created successfully';
+        const caseId = event.detail.id
+        const successMessage = this.recordId ? 'Case updated successfully' : 'Case created successfully'
         
         this.dispatchEvent(new ShowToastEvent({
             title: 'Success',
             message: successMessage,
             variant: 'success'
         }));
-        this.navigateToRecord(caseId);
+        this.navigateToRecord(caseId)
     }
 
     handleContactSuccess(event) {
         
-        this.showSuccessToast('Contact created successfully');
-        this.closeModal();
-        this.fetchContacts(); // Refresh contacts after new contact creation
+        this.showSuccessToast('Contact created successfully')
+        this.closeModal()
+        this.fetchContacts() // Refresh contacts after new contact creation
     }
     handleContactCancel(event){
-        this.closeModal();
+        this.closeModal()
     }
 
     handleError(event) {
-        this.showErrorToast(event.detail.message);
+        this.showErrorToast(event.detail.message)
     }
 
     showSuccessToast(message) {

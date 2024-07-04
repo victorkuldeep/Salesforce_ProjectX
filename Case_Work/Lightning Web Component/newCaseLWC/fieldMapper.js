@@ -30,7 +30,6 @@ const fieldConfig = [
         sectionName: 'Address Details',
         columns: [
             [
-                { apiName: 'EngineeringReqNumber__c', required: false },
                 { apiName: 'IsEscalated', required: false }
             ],
             [
@@ -45,38 +44,29 @@ const valueChangeMapper = {
     Status: [
         { 
             New: [
-                { apiName: 'EngineeringReqNumber__c', required: true }, 
-                { apiName: 'Target_Date__c', required: false },
-                { apiName: 'SuppliedPhone', required: true },
-                { apiName: 'SuppliedName', required: false }
-            ],
-            Working: [
-                { apiName: 'SuppliedPhone', required: true },
-                { apiName: 'SuppliedName', required: false }
-            ],
-            Closed: [
-                { apiName: 'SuppliedName', required: true },
                 { apiName: 'Target_Date__c', required: false }
             ],
+            Working: [
+                { apiName: 'SuppliedPhone', required: true }
+            ],
+            Closed: [
+                { apiName: 'SuppliedName', required: true }
+            ],
             Escalated: [
-                { apiName: 'Target_Date__c', required: true },
-                { apiName: 'SuppliedPhone', required: false }
+                { apiName: 'EngineeringReqNumber__c', required: true }
             ]
         }
     ],
     Origin: [
         { 
             Phone: [
-                { apiName: 'Target_Date__c', required: true }, 
-                { apiName: 'SuppliedEmail', required: false }
+                { apiName: 'Reason', required: true }
             ],
             Email: [
-                { apiName: 'SuppliedEmail', required: true },
-                { apiName: 'SuppliedPhone', required: false }
+                { apiName: 'ContactEmail', required: true }
             ],
             Web: [
-                { apiName: 'SuppliedPhone', required: true },
-                { apiName: 'EngineeringReqNumber__c', required: false }
+                { apiName: 'Description', required: false }
             ]
         }
     ]

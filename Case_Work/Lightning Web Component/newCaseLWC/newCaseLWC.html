@@ -8,7 +8,7 @@
 <template>
     <div style="background-color: #ffffff; border: none">
         
-        <lightning-record-edit-form object-api-name="Case" onsuccess={handleSuccess} onsubmit={handleFormSubmit}>
+        <lightning-record-edit-form object-api-name="Case" record-id={recordId} onsuccess={handleSuccess} onsubmit={handleFormSubmit} onload={handleOnLoad}>
 
             <!-- Show spinner when isLoading is true -->
             <template if:true={isLoading}>
@@ -26,7 +26,8 @@
                                         key={field.apiName}
                                         field-name={field.apiName}
                                         required={field.required}
-                                        onchange={fieldChangeHandler}>
+                                        onchange={fieldChangeHandler}
+                                        disabled={isReadOnly}>
                                     </lightning-input-field>
                                 </template>
                             </div>
