@@ -185,7 +185,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
              * Example: Origin is API Name and Web is Value
              * 
             */
-            event.target.fieldName == 'Origin' && event.target.value == 'Web' ? this.handleSectionVisibility('System_Information','Show') : this.handleSectionVisibility('System_Information','Hide')
+            event.target.fieldName == 'Origin' && event.target.value == 'Web' ? this.handleSectionVisibility('System_Information','Show') : event.target.fieldName == 'Origin' && event.target.value != 'Web' ? this.handleSectionVisibility('System_Information','Hide') : console.log('No Origin Changed')
         }
     }
 
