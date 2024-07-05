@@ -1,12 +1,14 @@
-import { LightningElement, api, track, wire } from 'lwc';
-import { ShowToastEvent } from 'lightning/platformShowToastEvent';
-import { NavigationMixin } from 'lightning/navigation';
-import { getRecord } from 'lightning/uiRecordApi';
-import getContacts from '@salesforce/apex/CaseController.getContacts';
-import getRecordTypeByName from '@salesforce/apex/ContactController.getRecordTypeByName';
-import { getObjectInfo } from 'lightning/uiObjectInfoApi';
-import CONTACT_OBJECT from '@salesforce/schema/Contact';
-import { fieldMapperContact, valueChangeMapper, fieldConfig, valueChangeMapperEdit, fieldConfigEdit, acSection, sectionIndexMapper, defaultContactRecordType }  from './fieldMapper';
+import { LightningElement, api, track, wire } from 'lwc'
+import { ShowToastEvent } from 'lightning/platformShowToastEvent'
+import { NavigationMixin } from 'lightning/navigation'
+import { getRecord } from 'lightning/uiRecordApi'
+import getContacts from '@salesforce/apex/CaseController.getContacts'
+import getRecordTypeByName from '@salesforce/apex/ContactController.getRecordTypeByName'
+import { getObjectInfo } from 'lightning/uiObjectInfoApi'
+import { fieldMapperContact, valueChangeMapper, fieldConfig, valueChangeMapperEdit, fieldConfigEdit, acSection, sectionIndexMapper, defaultContactRecordType }  from './fieldMapper'
+import CONTACT_OBJECT from '@salesforce/schema/Contact'
+import ProfileName from '@salesforce/schema/User.Profile.Name' //this scoped module imports the current user profile name
+import Id from '@salesforce/user/Id';
 
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     
@@ -36,7 +38,17 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     sectionIndex = 0
     defaultContactRecordType = defaultContactRecordType
     elemKey
+    userProfileName
+    userid = Id
     
+    @wire(getRecord, { recordId: Id, fields: [ProfileName] })
+    userDetails({ error, data }) {
+        if(data && data.fields.Profile.value != null){
+            this.userProfileName = data.fields.Profile.value.fields.Name.value
+            console.log('User Profile is ' + this.userProfileName)
+        }
+
+    }
     @wire(getObjectInfo, { objectApiName: CONTACT_OBJECT })
     objectInfo;
 
@@ -100,6 +112,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             //handleSectionVisibility(SECTION NAME,MODE)
             fieldsData['Origin'].value == 'Web' ? this.handleSectionVisibility('System_Information','Show') : this.handleSectionVisibility('System_Information','Hide')
             console.log('Section Visibility Done')
+            this.userProfileName == 'System Administrator' ? this.template.querySelector("lightning-input-field[data-name=Authentication_Override_Reason__c]").disabled = false : console.log('Non Admin User')
         }
     }
 
@@ -108,8 +121,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     fieldChangeHandler(event){
 
         // Check if onChange is defined in value change mapper static data structure
-        console.log('Field API Name - ' + event.target.fieldName)
-        console.log('Field Value is ' + event.target.value)
         if(this.finalValueChangeMapper[event.target.fieldName]){
             if(this.recordsData == undefined || this.recordsData[event.target.fieldName] == undefined){
                 this.recordsData = { ...this.recordsData, [event.target.fieldName]: event.target.value }
