@@ -3,4 +3,14 @@
 }
 .slds-section__title {
     font-weight: normal;
+    background-color: #f3f3f3;
+}
+.required-indicator {
+    color: red;
+}
+.italic-text {
+    font-style: italic;
+}
+.div-float-right {
+    float: right;
 }

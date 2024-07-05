@@ -6,7 +6,7 @@ import getContacts from '@salesforce/apex/CaseController.getContacts';
 import getRecordTypeByName from '@salesforce/apex/ContactController.getRecordTypeByName';
 import { getObjectInfo } from 'lightning/uiObjectInfoApi';
 import CONTACT_OBJECT from '@salesforce/schema/Contact';
-import { fieldMapperContact, valueChangeMapper, fieldConfig, lastSection }  from './fieldMapper';
+import { fieldMapperContact, valueChangeMapper, fieldConfig, valueChangeMapperEdit, fieldConfigEdit, acSection, sectionIndexMapper, defaultContactRecordType }  from './fieldMapper';
 
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     
@@ -18,24 +18,24 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     @track previousPicklistValue = '';
     @track currentPicklistValue = '';
     @track recordsData
-    @track sections = fieldConfig.map(section => ({
-        ...section,
-        columns: section.columns.map((column, columnIndex) => ({
-            key: `${section.sectionName}-${columnIndex}`,
-            fields: column
-        }))
-    }));
-
+    @track sections
     accountId;
     contactId;
-    isContactDisabled = true;
     isModalOpen = false; // Ensure this property is defined
     selectedRecordTypeId;
     selectedRecordTypeName;
     fieldConfig = fieldConfig
     valueChangeMapper = valueChangeMapper
-    lastSection = lastSection
+    fieldConfigEdit = fieldConfigEdit
+    valueChangeMapperEdit = valueChangeMapperEdit
+    sectionIndexMapper = sectionIndexMapper
+    finalFieldConfig
+    finalValueChangeMapper
+    acSection = acSection
     initialLoadStatus = false
+    sectionIndex = 0
+    defaultContactRecordType = defaultContactRecordType
+    elemKey
     
     @wire(getObjectInfo, { objectApiName: CONTACT_OBJECT })
     objectInfo;
@@ -52,60 +52,54 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     connectedCallback() {
-        console.log('Connected Callback Lifecycle Hook')
+
+        console.log('Connected Callback Lifecycle Hook ' + this.recordId)
+        this.finalFieldConfig = this.recordId ? fieldConfigEdit : fieldConfig
+        this.finalValueChangeMapper = this.recordId ? valueChangeMapperEdit : valueChangeMapper
         // Fetch record types
         this.fetchRecordTypes();
 
         if(this.isReadOnly == undefined){
             this.isReadOnly = true;
-            this.isContactDisabled = true;
         }
-
         // Re-Initilize in Connected Callback lifecycle hook - BUGFIX: Cache rendering old state of array on UI
-        this.sections = fieldConfig.map(section => ({
-            ...section,
+        this.sections = this.finalFieldConfig.map(section => ({
+            sectionName: section.sectionName[0],
+            sectionKey: section.sectionName[1],
             columns: section.columns.map((column, columnIndex) => ({
-                key: `${section.sectionName}-${columnIndex}`,
+                key: `${section.sectionName[1]}-${columnIndex}`,
                 fields: column
             }))
         }));
-
         // BUGFIX: To Trigger Reactivity on User Interface and clears previous object state
         this.sections = JSON.parse(JSON.stringify(this.sections))
+        console.log(JSON.stringify(this.sections))
     }
 
     // BUGFIX: Rendering of auto - conditional fields in case of Edit mode
     handleOnLoad(event) {
 
-        if(!this.recordId && !this.initialLoadStatus){
-            const fieldsData = event.detail.record.fields
+        const fieldsData = this.recordId ? event.detail.records[this.recordId].fields : event.detail.record.fields
+
+        if(!this.initialLoadStatus){  
+        
             Object.keys(fieldsData).forEach(apiName => { 
         
-                if(this.valueChangeMapper[apiName]){
+                if(this.finalValueChangeMapper[apiName]){
+                    this.sectionIndex = this.sectionIndexMapper[apiName]
                     this.recordsData = { ...this.recordsData, [apiName]: fieldsData[apiName].value }
                     if(fieldsData[apiName].value != null){
-                        const fieldsDataToAdd = this.valueChangeMapper[apiName][0][fieldsData[apiName].value]
-                        this.addFieldsToColumn(this.sections[0].columns[1],fieldsDataToAdd)
+                        const fieldsDataToAdd = this.finalValueChangeMapper[apiName][0][fieldsData[apiName].value]
+                        fieldsDataToAdd ? this.addFieldsToColumn(this.sections[this.sectionIndex].columns[1],fieldsDataToAdd) : console.log('No Mapping in onChangeMapper for Value') //BUGFIX: If no valid mapping in fieldMapper then handle error
                     }
                 }
             });
             this.initialLoadStatus = true
-            console.log(JSON.stringify(this.recordsData))
-        }
-        if(this.recordId && !this.initialLoadStatus){
-        
-            const fieldsData = event.detail.records[this.recordId].fields
-        
-            Object.keys(fieldsData).forEach(apiName => { 
-        
-                if(this.valueChangeMapper[apiName]){
-        
-                    const fieldsDataToAdd = this.valueChangeMapper[apiName][0][fieldsData[apiName].value]
-                    this.addFieldsToColumn(this.sections[0].columns[1],fieldsDataToAdd)
-                    this.recordsData = { ...this.recordsData, [apiName]: fieldsData[apiName].value }
-                }
-            });
-            this.initialLoadStatus = true
+            //console.log(JSON.stringify(this.recordsData))
+            console.log('Field Value of Origin is ' + fieldsData['Origin'].value)
+            //handleSectionVisibility(SECTION NAME,MODE)
+            fieldsData['Origin'].value == 'Web' ? this.handleSectionVisibility('System_Information','Show') : this.handleSectionVisibility('System_Information','Hide')
+            console.log('Section Visibility Done')
         }
     }
 
@@ -114,21 +108,18 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     fieldChangeHandler(event){
 
         // Check if onChange is defined in value change mapper static data structure
-        if(this.valueChangeMapper[event.target.fieldName]){
-
+        console.log('Field API Name - ' + event.target.fieldName)
+        console.log('Field Value is ' + event.target.value)
+        if(this.finalValueChangeMapper[event.target.fieldName]){
             if(this.recordsData == undefined || this.recordsData[event.target.fieldName] == undefined){
-            
                 this.recordsData = { ...this.recordsData, [event.target.fieldName]: event.target.value }
             }
-            
             if(this.recordsData){
-                
                 // Deep copy the data
                 this.previousPicklistValue = JSON.parse(JSON.stringify(this.recordsData[event.target.fieldName]))
                 this.currentPicklistValue = event.detail.value
                 
             }else{
-
                 this.previousPicklistValue = this.currentPicklistValue
                 this.currentPicklistValue = event.detail.value
             }
@@ -136,12 +127,30 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             console.log(`Current Value is ${this.currentPicklistValue} and Previous Value is ${this.previousPicklistValue}`)
             
             this.recordsData[event.target.fieldName] = event.detail.value
-            const fieldsData = this.valueChangeMapper[event.target.fieldName][0][this.currentPicklistValue]
-            const fieldsDataToRemove = this.valueChangeMapper[event.target.fieldName][0][this.previousPicklistValue]
+            // Fields to Add
+            const fieldsData = this.finalValueChangeMapper[event.target.fieldName][0][this.currentPicklistValue]
+            // Fields to Remove
+            const fieldsDataToRemove = this.finalValueChangeMapper[event.target.fieldName][0][this.previousPicklistValue]
             
-            this.previousPicklistValue != this.currentPicklistValue && fieldsDataToRemove != undefined && fieldsDataToRemove != null ? this.removeFields(this.sections[0].columns[1], fieldsDataToRemove) : console.log('No Data to Remove')
-            fieldsData != undefined && fieldsData != null ? this.addFieldsToColumn(this.sections[0].columns[1],fieldsData) : console.log('No Data to Add')
-            
+            // Add & Remove Fields Logic Begin
+            this.sectionIndex = this.sectionIndexMapper[event.target.fieldName]
+            this.previousPicklistValue != this.currentPicklistValue && fieldsDataToRemove != undefined && fieldsDataToRemove != null ? this.removeFields(this.sections[this.sectionIndex].columns[1], fieldsDataToRemove) : console.log('No Data to Remove')
+            fieldsData != undefined && fieldsData != null ? this.addFieldsToColumn(this.sections[this.sectionIndex].columns[1],fieldsData) : console.log('No Data to Add')
+            // Add & Remove Fields Logic End
+
+            event.target.fieldName == 'Origin' && event.target.value == 'Web' ? this.handleSectionVisibility('System_Information','Show') : this.handleSectionVisibility('System_Information','Hide')
+        }
+    }
+
+    handleSectionVisibility(key,mode){
+
+        this.elemKey = '.exclusivity-hide[data-recid='+key+']'
+
+        console.log(this.template.querySelector(this.elemKey))
+        const section = this.template.querySelector(this.elemKey);
+        console.log('Section - ' + section)
+        if(section){
+            mode == 'Hide' ? section.classList.add('slds-hide') : mode == 'Show' ? section.classList.remove('slds-hide') : console.log('Invalid Mode')
         }
     }
 
@@ -154,7 +163,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         });
     }
     addFieldsToColumn(column, fields) {
-        
+        console.log('addFieldstoColumn -> ' + fields)
         fields.forEach(field => {
             // Check if the field already exists
             if (!column.fields.some(existingField => existingField.apiName === field.apiName)) {
@@ -171,7 +180,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     
     fetchRecordTypes() {
         
-        getRecordTypeByName({recordTypeName:'US'})
+        getRecordTypeByName({recordTypeName:this.defaultContactRecordType})
             .then(result =>{
                 this.selectedRecordTypeId = result[0] ? result[0].Id : null
                 this.selectedRecordTypeName = result[0] ? result[0].Name : null
@@ -218,7 +227,11 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         this.accountId = event.target.value
         this.contactId = null // Reset selected contact when changing account
         this.fetchContacts()
-        this.isContactDisabled = this.accountId ? false : true
+        const createContactHolder = this.template.querySelector('.exclusivity-show[data-recid="createContactHolder"]');
+        if (createContactHolder) {
+            // Bugfix: Keep it hidden in case of Edit Mode
+            this.accountId && !this.recordId ? createContactHolder.classList.remove('slds-hide') : createContactHolder.classList.add('slds-hide')
+        }
     }
 
     fetchContacts() {
@@ -272,6 +285,10 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             variant: 'success'
         }));
         this.navigateToRecord(caseId)
+    }
+
+    handleFormError(event){
+        this.isLoading = false // Stop loader if form has errors
     }
 
     handleContactSuccess(event) {
