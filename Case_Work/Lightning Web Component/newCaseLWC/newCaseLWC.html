@@ -2,22 +2,49 @@
 @description       : 
 @author            : Kuldeep Singh
 @group             : 
-@last modified on  : 07-04-2024
+@last modified on  : 07-05-2024
 @last modified by  : Kuldeep Singh
 -->
 <template>
     <div style="background-color: #ffffff; border: none">
-        
-        <lightning-record-edit-form object-api-name="Case" record-id={recordId} onsuccess={handleSuccess} onsubmit={handleFormSubmit} onload={handleOnLoad}>
-
-            <!-- Show spinner when isLoading is true -->
+        <div class="slds-clearfix">
+            <div class="slds-float_right slds-p-bottom_small">
+                <span class="required-indicator">*</span> &nbsp;=&nbsp; <span class="italic-text">Required Information</span>
+            </div>  
+        </div>
+        <lightning-record-edit-form object-api-name="Case" record-id={recordId} onsuccess={handleSuccess} onsubmit={handleFormSubmit} onload={handleOnLoad} onerror={handleFormError}>
+            
+            <!-- Show spinner when isLoading is true Begin-->
             <template if:true={isLoading}>
                 <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
             </template>
-
+            <!-- Show spinner when isLoading is true End -->
+            
+            <!-- Account And Contact Section -->
+            <h2 class="slds-section__title slds-p-left_medium">{acSection}</h2>
+            <div class="slds-grid slds-wrap">
+                <!-- Left Column -->
+                <div class="slds-col slds-size_1-of-2">
+                    <lightning-input-field field-name="AccountId" required disabled={isReadOnly} onchange={handleFieldChange}></lightning-input-field>
+                    <lightning-output-field field-name="OwnerId"></lightning-output-field>
+                </div>
+                <!-- Right Column -->
+                <div class="slds-col slds-size_1-of-2">
+                    <lightning-combobox label="Contact" value={contactId} options={contactOptions} onchange={handleFieldChange} disabled={isReadOnly}></lightning-combobox>
+                    <!-- Hidden input field to store the selected contact ID -->
+                    <lightning-input-field field-name="ContactId" value={contactId} class="slds-hide" disabled={isReadOnly}></lightning-input-field>
+                    <div class="slds-m-top_medium slds-hide exclusivity-show" data-recid="createContactHolder">
+                        <lightning-button label="New Contact" icon-name="utility:add" onclick={handleNewContactClick}></lightning-button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Account And Contact End -->
+            
+            <!-- Dynamic Rendering of Form From Field Mapper Begin -->
             <template for:each={sections} for:item="section">
-                <div key={section.sectionName} class="slds-section">
-                    <h2 class="slds-section__title">{section.sectionName}</h2>
+                <div key={section.sectionName} class="slds-section exclusivity-hide" data-recid={section.sectionKey}>
+                    <h2 class="slds-section__title slds-p-left_medium">{section.sectionName}</h2>
                     <div class="slds-grid slds-wrap">
                         <template for:each={section.columns} for:item="column">
                             <div key={column.key} class="slds-col slds-size_1-of-2">
@@ -27,7 +54,8 @@
                                         field-name={field.apiName}
                                         required={field.required}
                                         onchange={fieldChangeHandler}
-                                        disabled={isReadOnly}>
+                                        disabled={field.readOnly}
+                                        data-name={field.apiName}>
                                     </lightning-input-field>
                                 </template>
                             </div>
@@ -35,23 +63,20 @@
                     </div>
                 </div>
             </template>
-            <!-- Account And Contact Section -->
-            <h2 class="slds-section__title">{lastSection}</h2>
-            <lightning-input-field field-name="AccountId" required disabled={isReadOnly} onchange={handleFieldChange}></lightning-input-field>
-            <lightning-combobox label="Contact" value={contactId} options={contactOptions} onchange={handleFieldChange} disabled={isReadOnly}></lightning-combobox>
-            <!-- Hidden input field to store the selected contact ID -->
-            <lightning-input-field field-name="ContactId" value={contactId} class="slds-hide" disabled={isReadOnly}></lightning-input-field>
-            <div class="slds-m-top_medium">
-                <lightning-button-icon icon-name="utility:add" alternative-text="New Contact" onclick={handleNewContactClick} class="slds-m-left_x_small" disabled={isContactDisabled}></lightning-button-icon> &nbsp;Create New Contact
-            </div>
+
+            <!-- Dynamic Rendering of Form From Field Mapper Begin -->
+            
+            <!-- Button Group Section Begin-->
+            
             <div class="slds-m-around_medium slds-grid slds-grid_align-end">
                 <template if:true={isReadOnly}>
                     <lightning-button-icon icon-name="utility:edit" alternative-text="Edit" onclick={editHandler} class="slds-m-around_x-small"></lightning-button-icon>
                 </template>
                 <template if:false={isReadOnly}>
-                    <lightning-button class="slds-m-around_x-small" variant="brand" type="submit" name="submit" label="Submit" disabled={isReadOnly}></lightning-button>
+                    <lightning-button class="slds-m-around_x-small" variant="brand" type="submit" name="submit" label="Save" disabled={isReadOnly}></lightning-button>
                 </template>
             </div>
+            <!-- Button Group Section End-->
         </lightning-record-edit-form>
 
         <!-- Modal for New Contact -->
