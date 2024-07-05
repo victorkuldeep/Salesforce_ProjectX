@@ -109,15 +109,23 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             this.initialLoadStatus = true
             //console.log(JSON.stringify(this.recordsData))
             console.log('Field Value of Origin is ' + fieldsData['Origin'].value)
-            //handleSectionVisibility(SECTION NAME,MODE)
+            //handleSectionVisibility(SECTION_NAME,MODE)
             fieldsData['Origin'].value == 'Web' ? this.handleSectionVisibility('System_Information','Show') : this.handleSectionVisibility('System_Information','Hide')
-            console.log('Section Visibility Done')
-            this.userProfileName == 'System Administrator' ? this.template.querySelector("lightning-input-field[data-name=Authentication_Override_Reason__c]").disabled = false : console.log('Non Admin User')
+            /** This Method will override Required property for System Admin and make all fields on form as Editable */
+            this.overrideAdminVisibility()
         }
     }
 
     // Dynamic Form JS Handlers Begin
-
+    overrideAdminVisibility(){
+        if(this.userProfileName == 'System Administrator'){
+            console.log('Admin Profile Override begin')
+            let allFields = this.template.querySelectorAll("lightning-input-field")
+            allFields.forEach(fieldX => {
+                fieldX.disabled=false
+            })
+        }
+    }
     fieldChangeHandler(event){
 
         // Check if onChange is defined in value change mapper static data structure
