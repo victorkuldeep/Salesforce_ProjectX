@@ -1,12 +1,10 @@
 ({
     createLWC: function(component, headerText) {
-        
+        // Overlay lib is used to create pop up moadal and show LWC inside and act as a container
         var overlayLib = component.find("overlayLib");
         // Dynamically create the LWC component inside the modal
         $A.createComponent(
-            
             "c:newCaseLWC",
-            
             {   recordId: component.get("v.recordId"),
                 objectApiName: "Case",
                 isReadOnly: false
@@ -15,7 +13,6 @@
             function(newCaseLWC, status, errorMessage){
             
                 if (status === "SUCCESS") {
-                
                     var body = component.get("v.body") || [];
                     body.push(newCaseLWC);
                     component.set("v.body", body);
@@ -25,15 +22,11 @@
                         header: headerText,
                         body: newCaseLWC,
                         showCloseButton: true,
-                        cssClass: "slds-modal_medium",
+                        cssClass: "slds-modal_large",
                         
                         closeCallback: function() {
-                        
-                            console.log('LWC Closed');
-                            
                             // Callback function when modal is closed
                             component.set("v.isModalOpen", false);
-                            
                             // Navigate back to the Case tab list view
                             var navService = component.find("navService");
                             

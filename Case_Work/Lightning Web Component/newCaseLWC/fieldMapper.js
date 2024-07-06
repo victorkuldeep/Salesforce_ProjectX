@@ -1,6 +1,17 @@
-// recordTypeFieldMap.js
+/**
+ * @description - This is field mapper to dynamically create New and Edit layout for case object.
+ */
+
+// default record type set while creating new contact record
 const defaultContactRecordType = 'Contact'
+// read only case status
 const readOnlyCaseStatus = ['Closed','Closed - Duplicate','Closed - New Bug Logged','Closed - Resolved With Internal Tools']
+// Defaut first Section name - statically mapped in LWC HTML
+const acSection = 'Account and Contact Details'
+
+/**
+ * Descroiption: This is field mapping for Contact New custom layout having contact field api name, required and disabled properties
+ */
 const fieldMapperContact = {
     default: [
         { fieldName: 'FirstName', required: true, disabled: false },
@@ -16,8 +27,13 @@ const fieldMapperContact = {
     ]
 };
 
-const acSection = 'Account and Contact Details'
-
+/** Description: New Case layout mapper configuration for New Case Layout.
+ * @param sectionName: Name of the section followed by Key used to find in Java Scrpit.
+ * @param columns: Columns of the section. Two dimensional array.
+ * @param apiName: API Name of the field.
+ * @param required: Boolean value to determine if field is required or not.
+ * @param readOnly: Boolean value to determine if field is read only or not.
+ */
 const fieldConfig = [
     {
         sectionName: ['Case Overview','Case_Overview'],
@@ -49,6 +65,12 @@ const fieldConfig = [
     }
 ];
 
+/**
+ * Description: This is on change field mapping for Case New custom layout having case field api name, required and disabled properties
+ * Object: Keys are the API Name to be configured as on chnage and hold array of objects having key as field value configured as
+ * on change and array of objects holding api names and properties.
+ * Applicatable for NEW CASE
+ */
 const valueChangeMapper = {
     Status: [
         { 
@@ -70,6 +92,13 @@ const valueChangeMapper = {
     ]
 };
 
+/** Description: Edit Case layout mapper configuration for New Case Layout.
+ * @param sectionName: Name of the section followed by Key used to find in Java Scrpit.
+ * @param columns: Columns of the section. Two dimensional array.
+ * @param apiName: API Name of the field.
+ * @param required: Boolean value to determine if field is required or not.
+ * @param readOnly: Boolean value to determine if field is read only or not.
+ */
 const fieldConfigEdit = [
     {
         sectionName: ['Case Overview','Case_Overview'], // 0: LABEL AND 1:BACKEND ELEMENT KEY without white spaces
@@ -126,7 +155,12 @@ const fieldConfigEdit = [
         ]
     }
 ];
-
+/**
+ * Description: This is on change field mapping for Case New custom layout having case field api name, required and disabled properties
+ * Object: Keys are the API Name to be configured as on chnage and hold array of objects having key as field value configured as
+ * on change and array of objects holding api names and properties.
+ * Applicatable for EDIT CASE
+ */
 const valueChangeMapperEdit = {
     Status: [
         { 
@@ -151,13 +185,26 @@ const valueChangeMapperEdit = {
         }
     ]
 };
-// This will decide index of section where the on Change fields will be pushed, this is very important mapping
+
+/**
+ * Description: This will decide index of section where the on Change fields will be pushed, this is very important mapping
+ * Example: Status is API Name configured in value change mapper and 0 is the section name where fields
+ * will be pushed from value change mapper
+ * 
+ * This is shared for NEW and EDIT - further customizaton required to make it separate
+ */
 const sectionIndexMapper = {
     Status: 0,
     Origin: 0,
     Category__c: 1 // On Change of Category will push dependent fields in Section index as 1 starting from 0
 };
 
+/**
+ * Description: This is the section visibility config for the fields, this is very important mapping
+ * Example: Origin is API Name configured in section visibility config and Web is the value configured
+ * If Origin is Web then System_Information key section will be shown and if not matched then same will be hidden for all other
+ * This is shared for EDIT - further customizaton required to make it separate
+ */
 const sectionVisibilityConfig = {
     Origin: {
         Web: [
@@ -169,6 +216,5 @@ const sectionVisibilityConfig = {
     }
     // Add more fieldName: value mappings here as needed
 };
-
-
+/** Exporting all constants */
 export {readOnlyCaseStatus,sectionVisibilityConfig, defaultContactRecordType,fieldMapperContact,fieldConfig,valueChangeMapper,fieldConfigEdit,valueChangeMapperEdit,acSection,sectionIndexMapper};
