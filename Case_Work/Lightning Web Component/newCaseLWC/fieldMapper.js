@@ -1,5 +1,6 @@
 // recordTypeFieldMap.js
 const defaultContactRecordType = 'Contact'
+const readOnlyCaseStatus = ['Closed','Closed - Duplicate','Closed - New Bug Logged','Closed - Resolved With Internal Tools']
 const fieldMapperContact = {
     default: [
         { fieldName: 'FirstName', required: true, disabled: false },
@@ -114,10 +115,13 @@ const fieldConfigEdit = [
         sectionName: ['System Information','System_Information'],
         columns: [
             [
-                { apiName: 'Authentication_Override_Reason__c', required: false, readOnly: true }
+                { apiName: 'SuppliedCompany', required: false, readOnly: true },
+                { apiName: 'SuppliedName', required: false, readOnly: true }
             ],
             [
                 // Placeholder - Second Column Fields
+                { apiName: 'SuppliedEmail', required: false, readOnly: true },
+                { apiName: 'SuppliedPhone', required: false, readOnly: true }
             ]
         ]
     }
@@ -126,10 +130,6 @@ const fieldConfigEdit = [
 const valueChangeMapperEdit = {
     Status: [
         { 
-            New: [
-                { apiName: 'SuppliedPhone', required: true },
-                { apiName: 'SuppliedName', required: false }
-            ],
             "Awaiting External": [
                 { apiName: 'Information_Requested__c', required: true }
             ]
@@ -158,4 +158,17 @@ const sectionIndexMapper = {
     Category__c: 1 // On Change of Category will push dependent fields in Section index as 1 starting from 0
 };
 
-export {defaultContactRecordType,fieldMapperContact,fieldConfig,valueChangeMapper,fieldConfigEdit,valueChangeMapperEdit,acSection,sectionIndexMapper};
+const sectionVisibilityConfig = {
+    Origin: {
+        Web: [
+            { section: 'System_Information', action: 'Show' }
+        ],
+        default: [
+            { section: 'System_Information', action: 'Hide' }
+        ]
+    }
+    // Add more fieldName: value mappings here as needed
+};
+
+
+export {readOnlyCaseStatus,sectionVisibilityConfig, defaultContactRecordType,fieldMapperContact,fieldConfig,valueChangeMapper,fieldConfigEdit,valueChangeMapperEdit,acSection,sectionIndexMapper};
