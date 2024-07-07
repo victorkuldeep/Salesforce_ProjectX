@@ -5,7 +5,7 @@
 // default record type set while creating new contact record
 const defaultContactRecordType = 'Contact'
 // read only case status
-const readOnlyCaseStatus = ['Closed','Closed - Duplicate','Closed - New Bug Logged','Closed - Resolved With Internal Tools']
+const readOnlyCaseStatus = ['Closed-XXX']
 // Defaut first Section name - statically mapped in LWC HTML
 const acSection = 'Account and Contact Details'
 
@@ -36,7 +36,7 @@ const fieldMapperContact = {
  */
 const fieldConfig = [
     {
-        sectionName: ['Case Overview','Case_Overview'],
+        sectionName: ['Case Overview', 'Case_Overview'],
         columns: [
             [
                 { apiName: 'Origin', required: true, readOnly: false },
@@ -49,7 +49,7 @@ const fieldConfig = [
         ]
     },
     {
-        sectionName: ['Case Details','Case_Details'],
+        sectionName: ['Case Details', 'Case_Details'],
         columns: [
             [
                 { apiName: 'Category__c', required: true, readOnly: false },
@@ -59,7 +59,7 @@ const fieldConfig = [
             [
                 { apiName: 'Subject', required: true, readOnly: false },
                 { apiName: 'ParentId', required: true, readOnly: false }
-                
+
             ]
         ]
     }
@@ -73,7 +73,7 @@ const fieldConfig = [
  */
 const valueChangeMapper = {
     Status: [
-        { 
+        {
             New: [ // If there are no whitespaces can be written without quotes
                 { apiName: 'SuppliedPhone', required: true, readOnly: false },
                 { apiName: 'SuppliedName', required: false, readOnly: false }
@@ -84,7 +84,7 @@ const valueChangeMapper = {
         }
     ],
     Category__c: [
-        { 
+        {
             "Technical Support": [
                 { apiName: 'Product__c', required: true, readOnly: false }
             ]
@@ -101,13 +101,13 @@ const valueChangeMapper = {
  */
 const fieldConfigEdit = [
     {
-        sectionName: ['Case Overview','Case_Overview'], // 0: LABEL AND 1:BACKEND ELEMENT KEY without white spaces
+        sectionName: ['Case Overview', 'Case_Overview'], // 0: LABEL AND 1:BACKEND ELEMENT KEY without white spaces
         columns: [
             [
                 { apiName: 'Origin', required: true, readOnly: false },
                 { apiName: 'Status', required: true, readOnly: false },
                 { apiName: 'Priority', required: false, readOnly: false }
-                
+
             ],
             [
                 { apiName: 'Department__c', required: false, readOnly: false },
@@ -115,7 +115,7 @@ const fieldConfigEdit = [
         ]
     },
     {
-        sectionName: ['Case Details','Case_Details'],
+        sectionName: ['Case Details', 'Case_Details'],
         columns: [
             [
                 { apiName: 'Category__c', required: true, readOnly: false },
@@ -125,12 +125,12 @@ const fieldConfigEdit = [
             [
                 { apiName: 'Subject', required: true, readOnly: false },
                 { apiName: 'ParentId', required: true, readOnly: false }
-                
+
             ]
         ]
     },
     {
-        sectionName: ['Case Resolution','Case_Resolution'],
+        sectionName: ['Case Resolution', 'Case_Resolution'],
         columns: [
             [
                 { apiName: 'Authentication_Override_Reason__c', required: false, readOnly: true }
@@ -141,7 +141,7 @@ const fieldConfigEdit = [
         ]
     },
     {
-        sectionName: ['System Information','System_Information'],
+        sectionName: ['System Information', 'System_Information'],
         columns: [
             [
                 { apiName: 'SuppliedCompany', required: false, readOnly: true },
@@ -163,14 +163,14 @@ const fieldConfigEdit = [
  */
 const valueChangeMapperEdit = {
     Status: [
-        { 
+        {
             "Awaiting External": [
                 { apiName: 'Information_Requested__c', required: true }
             ]
         }
     ],
     Origin: [
-        { 
+        {
             Email: [
                 { apiName: 'SuppliedName', required: true },
                 { apiName: 'SuppliedEmail', required: true }
@@ -178,7 +178,7 @@ const valueChangeMapperEdit = {
         }
     ],
     Category__c: [
-        { 
+        {
             "Technical Support": [
                 { apiName: 'Product__c', required: true }
             ]
@@ -217,4 +217,4 @@ const sectionVisibilityConfig = {
     // Add more fieldName: value mappings here as needed
 };
 /** Exporting all constants */
-export {readOnlyCaseStatus,sectionVisibilityConfig, defaultContactRecordType,fieldMapperContact,fieldConfig,valueChangeMapper,fieldConfigEdit,valueChangeMapperEdit,acSection,sectionIndexMapper};
+export { readOnlyCaseStatus, sectionVisibilityConfig, defaultContactRecordType, fieldMapperContact, fieldConfig, valueChangeMapper, fieldConfigEdit, valueChangeMapperEdit, acSection, sectionIndexMapper };
