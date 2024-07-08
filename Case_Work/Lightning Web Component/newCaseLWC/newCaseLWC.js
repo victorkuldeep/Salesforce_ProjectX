@@ -128,6 +128,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     handleOnLoad(event) {
         console.log('Event - onload')
         const fieldsData = this.recordId ? event.detail.records[this.recordId].fields : event.detail.record.fields
+        console.log(JSON.stringify(Object.keys(fieldsData)))
         // Execute logic once and avoid re-run on multiple on laods
         if (!this.initialLoadStatus) {
             // loop over all fields coming from field mapper and load additional fields as per conditional mapping during initial on load
@@ -144,7 +145,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                     }
                 }
             });
-            this.initialLoadStatus = true
+            this.initialLoadStatus = false // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
 
             /** Below logic is conditional and need to be implemented as per requirements 
              * <<API>> Name Value on UI == <<Required Value>> ? Show : Hide [Required Section Key] 
@@ -218,16 +219,16 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             if (this.recordsData) {
                 // Deep copy the data
                 this.previousPicklistValue = JSON.parse(JSON.stringify(this.recordsData[event.target.fieldName]))
-                this.currentPicklistValue = event.detail.value
+                this.currentPicklistValue = event.target.value // Bugfix: Added checkbox support detail -> target
 
             } else {
                 this.previousPicklistValue = this.currentPicklistValue
-                this.currentPicklistValue = event.detail.value
+                this.currentPicklistValue = event.target.value // Bugfix: Added checkbox support detail -> target 
             }
 
             console.log(`Current Value is ${this.currentPicklistValue} and Previous Value is ${this.previousPicklistValue}`)
 
-            this.recordsData[event.target.fieldName] = event.detail.value
+            this.recordsData[event.target.fieldName] = event.target.value // Bugfix: Added checkbox support detail -> target
             // Fields to Add
             const fieldsData = this.finalValueChangeMapper[event.target.fieldName][0][this.currentPicklistValue]
             // Fields to Remove
