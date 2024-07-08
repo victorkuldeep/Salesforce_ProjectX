@@ -213,6 +213,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
         // Check if onChange is defined in value change mapper static data structure
         if (this.finalValueChangeMapper[event.target.fieldName]) {
+            this.initialLoadStatus = true // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
             if (this.recordsData == undefined || this.recordsData[event.target.fieldName] == undefined) {
                 this.recordsData = { ...this.recordsData, [event.target.fieldName]: event.target.value }
             }
