@@ -27,6 +27,13 @@ const fieldMapperContact = {
     ]
 };
 
+/** This is default field mapper for contact creation and can be extended to multiple fields
+ * These fields are not visible on UI to user and values are directly saved on save.
+ */
+const fieldMapperContactDefault = {
+    Action_Center_Flow__c: true
+}
+
 /** Description: New Case layout mapper configuration for New Case Layout.
  * @param sectionName: Name of the section followed by Key used to find in Java Scrpit.
  * @param columns: Columns of the section. Two dimensional array.
@@ -120,7 +127,8 @@ const fieldConfigEdit = [
             [
                 { apiName: 'Category__c', required: true, readOnly: false },
                 { apiName: 'Sub_Category__c', required: true, readOnly: false },
-                { apiName: 'Description', required: true, readOnly: false }
+                { apiName: 'Description', required: true, readOnly: false },
+                { apiName: 'IsEscalated', required: false, readOnly: false }
             ],
             [
                 { apiName: 'Subject', required: true, readOnly: false },
@@ -136,7 +144,8 @@ const fieldConfigEdit = [
                 { apiName: 'Authentication_Override_Reason__c', required: false, readOnly: true }
             ],
             [
-                // Placeholder - Second Column Fields
+                // Placeholder - Second Column Fields IsEscalated
+
             ]
         ]
     },
@@ -183,6 +192,13 @@ const valueChangeMapperEdit = {
                 { apiName: 'Product__c', required: true }
             ]
         }
+    ],
+    IsEscalated: [
+        {
+            true: [
+                { apiName: 'External_Resolution_Notes__c', required: true }
+            ]
+        }
     ]
 };
 
@@ -196,7 +212,8 @@ const valueChangeMapperEdit = {
 const sectionIndexMapper = {
     Status: 0,
     Origin: 0,
-    Category__c: 1 // On Change of Category will push dependent fields in Section index as 1 starting from 0
+    Category__c: 1, // On Change of Category will push dependent fields in Section index as 1 starting from 0
+    IsEscalated: 1
 };
 
 /**
@@ -217,4 +234,4 @@ const sectionVisibilityConfig = {
     // Add more fieldName: value mappings here as needed
 };
 /** Exporting all constants */
-export { readOnlyCaseStatus, sectionVisibilityConfig, defaultContactRecordType, fieldMapperContact, fieldConfig, valueChangeMapper, fieldConfigEdit, valueChangeMapperEdit, acSection, sectionIndexMapper };
+export { fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, defaultContactRecordType, fieldMapperContact, fieldConfig, valueChangeMapper, fieldConfigEdit, valueChangeMapperEdit, acSection, sectionIndexMapper };
