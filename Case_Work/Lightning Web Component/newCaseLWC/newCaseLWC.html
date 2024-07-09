@@ -2,7 +2,7 @@
 @description       : 
 @author            : Kuldeep Singh
 @group             : 
-@last modified on  : 07-07-2024
+@last modified on  : 07-09-2024
 @last modified by  : Kuldeep Singh
 -->
 <template>
@@ -107,8 +107,16 @@
                                     Information</span>
                             </div>
                         </div>
+                        <!-- Show spinner when isContactLoading is true Begin-->
+                        <template if:true={isContactLoading}>
+                            <div class="slds-m-around_medium">
+                                <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+                            </div>
+                        </template>
+                        <!-- Show spinner when isContactLoading is true End -->
                         <lightning-record-edit-form object-api-name="Contact" record-type-id={selectedRecordTypeId}
-                            onsuccess={handleContactSuccess} oncancel={handleContactCancel} onerror={handleFormError}>
+                            onsuccess={handleContactSuccess} oncancel={handleContactCancel} onerror={handleFormError}
+                            onsubmit={handleContactFormSubmit}>
                             <div class="slds-grid slds-gutters slds-m-around_xx-small">
                                 <div class="slds-col slds-size_1-of-2">
                                     <template for:each={leftColumnFields} for:item="field">
@@ -125,6 +133,15 @@
                                     </template>
                                     <lightning-input-field field-name="AccountId" value={accountId} disabled=true
                                         variant="label-stacked"></lightning-input-field>
+
+                                    <!-- Placeholder for dynamically created hidden fields Begin-->
+                                    <template if:true={hiddenFieldsContact}>
+                                        <template for:each={hiddenFieldsContact} for:item="field">
+                                            <lightning-input-field key={field.fieldName} field-name={field.fieldName}
+                                                value={field.value} class="slds-hide"></lightning-input-field>
+                                        </template>
+                                    </template>
+                                    <!-- Placeholder for dynamically created hidden fields End-->
                                 </div>
                             </div>
                             <div class="slds-m-top_small slds-grid slds-grid_align-end">

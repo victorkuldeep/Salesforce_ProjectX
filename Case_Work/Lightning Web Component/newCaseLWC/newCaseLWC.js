@@ -5,7 +5,7 @@ import { getRecord } from 'lightning/uiRecordApi'
 import getContacts from '@salesforce/apex/CaseController.getContacts'
 import getRecordTypeByName from '@salesforce/apex/ContactController.getRecordTypeByName'
 import { getObjectInfo } from 'lightning/uiObjectInfoApi'
-import { readOnlyCaseStatus, sectionVisibilityConfig, fieldMapperContact, valueChangeMapper, fieldConfig, valueChangeMapperEdit, fieldConfigEdit, acSection, sectionIndexMapper, defaultContactRecordType } from './fieldMapper'
+import { fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, fieldMapperContact, valueChangeMapper, fieldConfig, valueChangeMapperEdit, fieldConfigEdit, acSection, sectionIndexMapper, defaultContactRecordType } from './fieldMapper'
 import CONTACT_OBJECT from '@salesforce/schema/Contact'
 import ProfileName from '@salesforce/schema/User.Profile.Name' //this scoped module imports the current user profile name
 import Id from '@salesforce/user/Id';
@@ -13,20 +13,23 @@ import LightningAlert from 'lightning/alert';
 
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
-    @api recordId;
+    @api recordId
     @api isReadOnly
-    @api objectApiName;
-    @track isLoading = false;
-    @track contactOptions = [];
-    @track previousPicklistValue = '';
-    @track currentPicklistValue = '';
+    @api objectApiName
+    @track isLoading = false
+    @track isContactLoading = false
+    @track contactOptions = []
+    @track previousPicklistValue = ''
+    @track currentPicklistValue = ''
     @track recordsData
     @track sections
-    accountId;
-    contactId;
-    isModalOpen = false; // Ensure this property is defined
-    selectedRecordTypeId;
-    selectedRecordTypeName;
+    @track userProfileName
+    @track hiddenFieldsContact = []
+    accountId
+    contactId
+    isModalOpen = false // Ensure this property is defined
+    selectedRecordTypeId
+    selectedRecordTypeName
     fieldConfig = fieldConfig
     valueChangeMapper = valueChangeMapper
     fieldConfigEdit = fieldConfigEdit
@@ -39,12 +42,13 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     sectionIndex = 0
     defaultContactRecordType = defaultContactRecordType
     elemKey
-    @track userProfileName
     userid = Id
     sectionVisibilityConfig = sectionVisibilityConfig
     readOnlyCaseStatus = readOnlyCaseStatus
     caseStatus
     triggerReadOnly = false
+    true_val = true
+    fieldMapperContactDefault = fieldMapperContactDefault
 
     /** Wire Adapter to pull logged in user Profile */
 
@@ -104,7 +108,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         }));
         // BUGFIX: To Trigger Reactivity on User Interface and clears previous object state
         this.sections = JSON.parse(JSON.stringify(this.sections))
-        console.log('Connected Callback Lifecycle Hook END')
+        console.log(this.hiddenFieldsContact)
+        this.setHiddenFields()
+        console.log('Connected Callback Lifecycle Hook END ')
     }
 
     /** LWC Lifecycle hook to run everytime once rendering is done on UI */
@@ -117,6 +123,12 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             this.makeCaseReadOnly()
             this.triggerReadOnly = false
         }
+    }
+
+    setHiddenFields() {
+        this.hiddenFieldsContact = Object.entries(fieldMapperContactDefault).map(([fieldName, value]) => {
+            return { fieldName, value };
+        });
     }
 
     /** Lightning Record Edit form on Load Handler
@@ -440,10 +452,17 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         this.template.querySelector('lightning-record-edit-form').submit(fields)
     }
 
+    /** Method called when contact is submitted and enable loader and form will be submitted automatically */
+    handleContactFormSubmit(event) {
+        this.isContactLoading = true
+    }
+
     /** success form submit handler */
 
     handleSuccess(event) {
 
+        this.isLoading = false // Stop loader if form has errors
+        this.isContactLoading = false
         const caseId = event.detail.id
         const successMessage = this.recordId ? 'Case updated successfully' : 'Case created successfully'
         this.dispatchEvent(new ShowToastEvent({
@@ -459,9 +478,10 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     async handleFormError(event) {
 
         this.isLoading = false // Stop loader if form has errors
+        this.isContactLoading = false
 
         let message = 'An error occurred while saving the record. Please try again later.';
-
+        console.log(JSON.stringify(event.detail))
         if (event.detail && event.detail.output && event.detail.output.errors && event.detail.output.errors.length > 0) {
             message = event.detail.output.errors.map(error => error.message).join(', ');
         } else if (event.detail && event.detail.output && event.detail.output.fieldErrors) {
@@ -483,6 +503,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     handleContactSuccess(event) {
 
+        this.isContactLoading = false
         this.showSuccessToast('Contact created successfully')
         this.closeModal()
         this.fetchContacts() // Refresh contacts after new contact creation
@@ -491,6 +512,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** Cancel button handler for contact modal */
 
     handleContactCancel(event) {
+        this.isContactLoading = false
         this.closeModal()
     }
 
