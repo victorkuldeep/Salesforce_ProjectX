@@ -49,6 +49,8 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     triggerReadOnly = false
     true_val = true
     fieldMapperContactDefault = fieldMapperContactDefault
+    delayTimeout
+    overrideFlag = false
 
     /** Wire Adapter to pull logged in user Profile */
 
@@ -125,6 +127,12 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         }
     }
 
+    disconnectedCallback() {
+        // Clear the timeout if the component is destroyed before the delay
+        clearTimeout(this.delayTimeout);
+        console.log('Timer Off ' + this.userProfileName)
+    }
+
     setHiddenFields() {
         this.hiddenFieldsContact = Object.entries(fieldMapperContactDefault).map(([fieldName, value]) => {
             return { fieldName, value };
@@ -138,6 +146,14 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      */
 
     handleOnLoad(event) {
+        if (!this.userProfileName) {
+            this.delayTimeout = setTimeout(() => {
+                console.log('Timer Set ')
+                if (!this.overrideFlag) {
+                    this.overrideAdminVisibility()
+                }
+            }, 3000);
+        }
         console.log('Event - onload')
         const fieldsData = this.recordId ? event.detail.records[this.recordId].fields : event.detail.record.fields
         console.log(JSON.stringify(Object.keys(fieldsData)))
@@ -200,6 +216,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             allFields.forEach(fieldX => {
                 fieldX.disabled = false
             })
+            this.overrideFlag = true
         }
     }
 

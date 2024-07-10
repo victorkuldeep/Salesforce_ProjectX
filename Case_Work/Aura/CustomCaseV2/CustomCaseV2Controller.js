@@ -1,14 +1,13 @@
 ({
-    handleInit: function(component, event, helper) {
-        
-        var overlayLib = component.find("overlayLib");
+    handleInit: function (component, event, helper) {
+
         var recordId = component.get("v.recordId");
-        if(recordId){
+        if (recordId) {
             var action = component.get("c.getCaseDetails");
             action.setParams({
                 caseId: recordId
             });
-            action.setCallback(this, function(response) {
+            action.setCallback(this, function (response) {
                 var state = response.getState();
                 if (state === "SUCCESS") {
                     var caseRecord = response.getReturnValue();
@@ -20,7 +19,7 @@
                 }
             });
             $A.enqueueAction(action);
-        }else{
+        } else {
             var headerText = 'New Case';
             component.set("v.headerText", headerText);
             helper.createLWC(component, headerText);

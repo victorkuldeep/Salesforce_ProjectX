@@ -2,29 +2,19 @@
   @description       : 
   @author            : Kuldeep Singh
   @group             : 
-  @last modified on  : 06-30-2024
+  @last modified on  : 07-11-2024
   @last modified by  : Kuldeep Singh
 -->
 <aura:component controller="CaseController" implements="lightning:actionOverride,force:hasRecordId" access="global">
     <aura:attribute name="recordId" type="String" />
-    <aura:attribute name="isModalOpen" type="Boolean" default="false"/>
+    <aura:attribute name="isModalOpen" type="Boolean" default="false" />
     <aura:attribute name="caseRecord" type="Case" />
     <aura:attribute name="headerText" type="String" />
-    <aura:attribute name="pageReference" type="Object"/>
-    <lightning:overlayLibrary aura:id="overlayLib"/>
-    <lightning:navigation aura:id="navService"/>
-    
+    <aura:attribute name="pageReference" type="Object" />
+    <lightning:overlayLibrary aura:id="overlayLib" />
+    <lightning:navigation aura:id="navService" />
+
     <aura:handler name="init" value="{!this}" action="{!c.handleInit}" />
-    
-    <force:recordData
-        aura:id="caseRecordLoader"
-        recordId="{!v.recordId}"
-        layoutType="FULL"
-        targetFields="{!v.caseRecord}"
-        fields="CaseNumber,Subject"
-        mode="VIEW"
-    />
-    
     <aura:if isTrue="{!v.isModalOpen}">
         <div aura:id="lwcContainer"></div>
     </aura:if>
