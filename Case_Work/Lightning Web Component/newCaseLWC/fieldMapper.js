@@ -5,12 +5,12 @@
 // default record type set while creating new contact record
 const defaultContactRecordType = 'Contact'
 // read only case status
-const readOnlyCaseStatus = ['Closed-XXX']
+const readOnlyCaseStatus = ['xyz']
 // Defaut first Section name - statically mapped in LWC HTML
 const acSection = 'Account and Contact Details'
 
 /**
- * Descroiption: This is field mapping for Contact New custom layout having contact field api name, required and disabled properties
+ * Description: This is field mapping for Contact New custom layout having contact field api name, required and disabled properties
  */
 const fieldMapperContact = {
     default: [
@@ -43,30 +43,33 @@ const fieldMapperContactDefault = {
  */
 const fieldConfig = [
     {
-        sectionName: ['Case Overview', 'Case_Overview'],
+        sectionName: ['Case Overview','Case_Overview'],
         columns: [
             [
                 { apiName: 'Origin', required: true, readOnly: false },
                 { apiName: 'Status', required: true, readOnly: false },
-                { apiName: 'Priority', required: false, readOnly: false }
+                { apiName: 'Priority', required: false, readOnly: false },
+                { apiName: 'Department__c', required: false, readOnly: false },
             ],
             [
-                { apiName: 'Department__c', required: false, readOnly: false },
+                
             ]
         ]
     },
     {
-        sectionName: ['Case Details', 'Case_Details'],
+        sectionName: ['Case Details','Case_Details'],
         columns: [
             [
-                { apiName: 'Category__c', required: true, readOnly: false },
-                { apiName: 'Sub_Category__c', required: true, readOnly: false },
-                { apiName: 'Description', required: true, readOnly: false }
+                { apiName: 'Subject', required: true, readOnly: false },
+                { apiName: 'Description', required: true, readOnly: false },
+                { apiName: 'Category__c', required: false, readOnly: false },
+                { apiName: 'Sub_Category__c', required: false, readOnly: false },
+                { apiName: 'ParentId', required: false, readOnly: false },
+                
             ],
             [
-                { apiName: 'Subject', required: true, readOnly: false },
-                { apiName: 'ParentId', required: true, readOnly: false }
-
+                
+                
             ]
         ]
     }
@@ -80,18 +83,15 @@ const fieldConfig = [
  */
 const valueChangeMapper = {
     Status: [
-        {
-            New: [ // If there are no whitespaces can be written without quotes
-                { apiName: 'SuppliedPhone', required: true, readOnly: false },
-                { apiName: 'SuppliedName', required: false, readOnly: false }
-            ],
+        { 
+            
             "Awaiting External": [ // fields having white spaces need to be wrapped in double quotes
                 { apiName: 'Information_Requested__c', required: true, readOnly: false }
             ]
         }
     ],
     Category__c: [
-        {
+        { 
             "Technical Support": [
                 { apiName: 'Product__c', required: true, readOnly: false }
             ]
@@ -108,58 +108,94 @@ const valueChangeMapper = {
  */
 const fieldConfigEdit = [
     {
-        sectionName: ['Case Overview', 'Case_Overview'], // 0: LABEL AND 1:BACKEND ELEMENT KEY without white spaces
+        sectionName: ['Case Overview','Case_Overview'], // 0: LABEL AND 1:BACKEND ELEMENT KEY without white spaces
         columns: [
             [
                 { apiName: 'Origin', required: true, readOnly: false },
                 { apiName: 'Status', required: true, readOnly: false },
-                { apiName: 'Priority', required: false, readOnly: false }
+                { apiName: 'Priority', required: false, readOnly: false },
+                { apiName: 'Department__c', required: false, readOnly: false },
+                { apiName: 'Authentication_Override_Reason__c', required: false, readOnly: true }
 
             ],
             [
-                { apiName: 'Department__c', required: false, readOnly: false },
+                { apiName: 'ContactEmail', required: false, readOnly: false },
+                { apiName: 'ContactPhone', required: false, readOnly: false },
+ 
             ]
         ]
     },
     {
-        sectionName: ['Case Details', 'Case_Details'],
+        sectionName: ['Case Details','Case_Details'],
         columns: [
-            [
-                { apiName: 'Category__c', required: true, readOnly: false },
-                { apiName: 'Sub_Category__c', required: true, readOnly: false },
-                { apiName: 'Description', required: true, readOnly: false },
-                { apiName: 'IsEscalated', required: false, readOnly: false }
-            ],
             [
                 { apiName: 'Subject', required: true, readOnly: false },
-                { apiName: 'ParentId', required: true, readOnly: false }
-
-            ]
-        ]
-    },
-    {
-        sectionName: ['Case Resolution', 'Case_Resolution'],
-        columns: [
-            [
-                { apiName: 'Authentication_Override_Reason__c', required: false, readOnly: true }
+                { apiName: 'Description', required: true, readOnly: false },
+                { apiName: 'Category__c', required: false, readOnly: false },
+                { apiName: 'Sub_Category__c', required: false, readOnly: false },
+                { apiName: 'ParentId', required: false, readOnly: false },
+                
             ],
             [
-                // Placeholder - Second Column Fields IsEscalated
-
+               
+                
             ]
         ]
     },
     {
-        sectionName: ['System Information', 'System_Information'],
+        sectionName: ['Resolution Details','Case_Resolution'],
+        columns: [
+            
+            [
+                { apiName: 'Reason', required: false, readOnly: false },
+                { apiName: 'Internal_Resolution_Notes__c', required: false, readOnly: false },
+                { apiName: 'Include_External_Resolution_Notes__c', required: false, readOnly: false },
+                
+            ],
+            [
+                
+
+            ]
+            
+           
+        ]
+    },
+    {
+        sectionName: ['Web to Case Details','Web_Case'],
+        columns: [
+            
+            [
+                { apiName: 'SuppliedCompany', required: false, readOnly: false },
+                { apiName: 'SuppliedName', required: false, readOnly: false },
+                { apiName: 'SuppliedPhone', required: false, readOnly: false },
+                { apiName: 'SuppliedEmail', required: false, readOnly: false },
+                { apiName: 'Web_Merchant_Id__c', required: false, readOnly: false },
+                { apiName: 'Web_Gateway_Serial_Number__c', required: false, readOnly: false },
+                { apiName: 'Web_Description__c', required: false, readOnly: false },
+                
+            ],
+            [
+               
+                
+            ]
+        ]
+    },
+
+    {
+        sectionName: ['System Information','System_Information'],
         columns: [
             [
-                { apiName: 'SuppliedCompany', required: false, readOnly: true },
-                { apiName: 'SuppliedName', required: false, readOnly: true }
+                { apiName: 'CreatedById', required: false, readOnly: true },
+                { apiName: 'CreatedDate', required: false, readOnly: true },
+                { apiName: 'ClosedDate', required: false, readOnly: true },
+                { apiName: 'LastModifiedById', required: false, readOnly: true },
+                { apiName: 'Last_Reopened_Datetime__c', required: false, readOnly: true }
             ],
             [
                 // Placeholder - Second Column Fields
-                { apiName: 'SuppliedEmail', required: false, readOnly: true },
-                { apiName: 'SuppliedPhone', required: false, readOnly: true }
+                { apiName: 'RecordTypeId', required: false, readOnly: true },
+                { apiName: 'Case_Age_Days__c', required: false, readOnly: true },
+                { apiName: 'Case_Age_Minutes__c', required: false, readOnly: true }
             ]
         ]
     }
@@ -172,32 +208,32 @@ const fieldConfigEdit = [
  */
 const valueChangeMapperEdit = {
     Status: [
-        {
+        { 
             "Awaiting External": [
                 { apiName: 'Information_Requested__c', required: true }
             ]
         }
     ],
     Origin: [
-        {
+        { 
             Email: [
-                { apiName: 'SuppliedName', required: true },
-                { apiName: 'SuppliedEmail', required: true }
+                { apiName: 'SuppliedName', required: false },
+                { apiName: 'SuppliedEmail', required: false }
             ]
         }
     ],
     Category__c: [
-        {
+        { 
             "Technical Support": [
                 { apiName: 'Product__c', required: true }
             ]
         }
     ],
-    IsEscalated: [
+    Include_External_Resolution_Notes__c: [
         {
-            true: [
-                { apiName: 'External_Resolution_Notes__c', required: true }
-            ]
+        true:[        
+             { apiName: 'External_Resolution_Notes__c', required: true}
+             ]
         }
     ]
 };
@@ -212,8 +248,8 @@ const valueChangeMapperEdit = {
 const sectionIndexMapper = {
     Status: 0,
     Origin: 0,
-    Category__c: 1, // On Change of Category will push dependent fields in Section index as 1 starting from 0
-    IsEscalated: 1
+    Category__c: 1,
+    Include_External_Resolution_Notes__c: 2 // On Change of Category will push dependent fields in Section index as 1 starting from 0
 };
 
 /**
@@ -225,13 +261,15 @@ const sectionIndexMapper = {
 const sectionVisibilityConfig = {
     Origin: {
         Web: [
-            { section: 'System_Information', action: 'Show' }
-        ],
-        default: [
-            { section: 'System_Information', action: 'Hide' }
-        ]
+            { section: 'Web_Case', action: 'Show' }
+            ],
+            default: [
+                { section: 'Web_Case', action: 'Hide' }
+            ]
+
+        
     }
     // Add more fieldName: value mappings here as needed
 };
 /** Exporting all constants */
-export { fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, defaultContactRecordType, fieldMapperContact, fieldConfig, valueChangeMapper, fieldConfigEdit, valueChangeMapperEdit, acSection, sectionIndexMapper };
+export {fieldMapperContactDefault,readOnlyCaseStatus,sectionVisibilityConfig, defaultContactRecordType,fieldMapperContact,fieldConfig,valueChangeMapper,fieldConfigEdit,valueChangeMapperEdit,acSection,sectionIndexMapper};

@@ -455,13 +455,15 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** method implemented to close the modal opened on UI */
 
     closeModal() {
-        this.isModalOpen = false
+        console.log('closing the window');
+        window.location.href = window.location.origin +'/lightning/r/';
+        //this.isModalOpen = false
     }
 
     /** Lightning record edit form submit handler to show laoders and submits the form */
-
+    @api
     handleFormSubmit(event) {
-
+        console.log('submitting form');
         event.preventDefault()
         this.isLoading = true
         const fields = event.detail.fields
@@ -475,7 +477,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** success form submit handler */
-
+    @api
     handleSuccess(event) {
 
         this.isLoading = false // Stop loader if form has errors
@@ -487,7 +489,17 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             message: successMessage,
             variant: 'success'
         }));
+        this.isModalOpen = false;
+        const successEvent = new CustomEvent('submitsuccess', {
+            bubbles: true,
+            composed: true,
+            detail: caseId
+        });
+        this.dispatchEvent(successEvent);
+        const closeEvent = new CustomEvent('hideModal', {detail : true});
+        this.dispatchEvent(closeEvent);
         this.navigateToRecord(caseId)
+        
     }
 
     /** error form submit handler */
@@ -565,7 +577,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     navigateToRecord(recordId) {
 
-        this[NavigationMixin.Navigate]({
+        window.location.href = window.location.origin +'/lightning/r/'+recordId+'/view'
+
+        /*this[NavigationMixin.Navigate]({
 
             type: 'standard__recordPage',
 
@@ -574,6 +588,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 objectApiName: 'Case',
                 actionName: 'view'
             }
-        });
+        });*/
     }
 }

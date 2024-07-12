@@ -1,10 +1,3 @@
-<!--
-  @description       : 
-  @author            : Kuldeep Singh
-  @group             : 
-  @last modified on  : 07-11-2024
-  @last modified by  : Kuldeep Singh
--->
 <aura:component controller="CaseController" implements="lightning:actionOverride,force:hasRecordId" access="global">
     <aura:attribute name="recordId" type="String" />
     <aura:attribute name="isModalOpen" type="Boolean" default="false" />
@@ -13,6 +6,7 @@
     <aura:attribute name="pageReference" type="Object" />
     <lightning:overlayLibrary aura:id="overlayLib" />
     <lightning:navigation aura:id="navService" />
+    <lightning:workspaceAPI aura:id="workspace" /> 
 
     <aura:handler name="init" value="{!this}" action="{!c.handleInit}" />
     <aura:if isTrue="{!v.isModalOpen}">

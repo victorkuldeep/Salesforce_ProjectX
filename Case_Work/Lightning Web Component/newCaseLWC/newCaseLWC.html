@@ -1,10 +1,11 @@
-<!--
-@description       : 
-@author            : Kuldeep Singh
-@group             : 
-@last modified on  : 07-09-2024
-@last modified by  : Kuldeep Singh
--->
+<!--/*********************
+
+Author      : Thejasvi Venkataneni
+Date        : 06/28/2024
+Description : Override for New Case and Edit Case 
+
+
+**********************-->
 <template>
     <div style="background-color: #ffffff; border: none">
         <div class="slds-clearfix">
@@ -27,13 +28,9 @@
             <div class="slds-grid slds-wrap">
                 <!-- Left Column -->
                 <div class="slds-col slds-size_1-of-2">
-                    <lightning-input-field field-name="AccountId" required disabled={isReadOnly}
+                    <lightning-input-field field-name="AccountId" disabled={isReadOnly}
                         onchange={handleFieldChange} variant="label-stacked"></lightning-input-field>
-                    <lightning-output-field field-name="OwnerId" variant="label-stacked"></lightning-output-field>
-                </div>
-                <!-- Right Column -->
-                <div class="slds-col slds-size_1-of-2">
-                    <lightning-combobox label="Contact" value={contactId} options={contactOptions}
+                        <lightning-combobox label="Contact" value={contactId} options={contactOptions}
                         onchange={handleFieldChange} disabled={isReadOnly} variant="label-stacked"></lightning-combobox>
                     <!-- Hidden input field to store the selected contact ID -->
                     <lightning-input-field field-name="ContactId" value={contactId} class="slds-hide"
@@ -42,6 +39,10 @@
                         <lightning-button label="New Contact" icon-name="utility:add"
                             onclick={handleNewContactClick}></lightning-button>
                     </div>
+                </div>
+                <!-- Right Column -->
+                <div class="slds-col slds-size_1-of-2">
+                    
                 </div>
             </div>
 
@@ -76,6 +77,8 @@
                         onclick={editHandler} class="slds-m-around_x-small"></lightning-button-icon>
                 </template>
                 <template if:false={isReadOnly}>
+                    <lightning-button class="slds-m-around_x-small" variant="brand" type="cancel" name="cancel"
+                        label="Cancel" disabled={isReadOnly}></lightning-button>
                     <lightning-button class="slds-m-around_x-small" variant="brand" type="submit" name="submit"
                         label="Save" disabled={isReadOnly}></lightning-button>
                 </template>
@@ -115,8 +118,7 @@
                         </template>
                         <!-- Show spinner when isContactLoading is true End -->
                         <lightning-record-edit-form object-api-name="Contact" record-type-id={selectedRecordTypeId}
-                            onsuccess={handleContactSuccess} oncancel={handleContactCancel} onerror={handleFormError}
-                            onsubmit={handleContactFormSubmit}>
+                            onsuccess={handleContactSuccess} oncancel={handleContactCancel} onerror={handleFormError} onsubmit={handleContactFormSubmit}>
                             <div class="slds-grid slds-gutters slds-m-around_xx-small">
                                 <div class="slds-col slds-size_1-of-2">
                                     <template for:each={leftColumnFields} for:item="field">
@@ -133,7 +135,7 @@
                                     </template>
                                     <lightning-input-field field-name="AccountId" value={accountId} disabled=true
                                         variant="label-stacked"></lightning-input-field>
-
+                                        
                                     <!-- Placeholder for dynamically created hidden fields Begin-->
                                     <template if:true={hiddenFieldsContact}>
                                         <template for:each={hiddenFieldsContact} for:item="field">
