@@ -77,10 +77,12 @@ Description : Override for New Case and Edit Case
                         onclick={editHandler} class="slds-m-around_x-small"></lightning-button-icon>
                 </template>
                 <template if:false={isReadOnly}>
-                    <lightning-button class="slds-m-around_x-small" variant="brand" type="cancel" name="cancel"
-                        label="Cancel" disabled={isReadOnly}></lightning-button>
-                    <lightning-button class="slds-m-around_x-small" variant="brand" type="submit" name="submit"
-                        label="Save" disabled={isReadOnly}></lightning-button>
+                    <div class="slds-m-top_small slds-grid slds-grid_align-end">
+                        <lightning-button variant="neutral" type="button" label="Cancel" onclick={handleCaseCancel}
+                            class="slds-m-right_small"></lightning-button>
+                        <lightning-button variant="brand" type="submit" name="submit" label="Save"
+                            disabled={isReadOnly}></lightning-button>
+                    </div>
                 </template>
             </div>
             <!-- Button Group Section End-->

@@ -455,9 +455,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** method implemented to close the modal opened on UI */
 
     closeModal() {
-        console.log('closing the window');
-        window.location.href = window.location.origin +'/lightning/r/';
-        //this.isModalOpen = false
+        //console.log('closing the window');
+        //window.location.href = window.location.origin +'/lightning/r/';
+        this.isModalOpen = false
     }
 
     /** Lightning record edit form submit handler to show laoders and submits the form */
@@ -496,10 +496,38 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             detail: caseId
         });
         this.dispatchEvent(successEvent);
-        const closeEvent = new CustomEvent('hideModal', {detail : true});
+        const closeEvent = new CustomEvent('hideModal', { detail: true });
         this.dispatchEvent(closeEvent);
         this.navigateToRecord(caseId)
-        
+    }
+
+    @api
+    handleCaseCancel(event) {
+        /** For Edit Mode Cancel button will behave exactly same as Success Button in Navigation */
+        if (this.recordId) {
+            const caseId = this.recordId
+            this.isModalOpen = false;
+            const successEvent = new CustomEvent('submitsuccess', {
+                bubbles: true,
+                composed: true,
+                detail: caseId
+            });
+            this.dispatchEvent(successEvent);
+            const closeEvent = new CustomEvent('hideModal', { detail: true });
+            this.dispatchEvent(closeEvent);
+            this.navigateToRecord(caseId)
+        } else {
+            /** This is for New Mode */
+            const cancelEvent = new CustomEvent('submitcancel', {
+                bubbles: true,
+                composed: true,
+                detail: this.recordId // undefined
+            });
+            this.dispatchEvent(cancelEvent);
+            const closeEvent = new CustomEvent('hideModal', { detail: true });
+            this.dispatchEvent(closeEvent);
+        }
+
     }
 
     /** error form submit handler */
@@ -577,7 +605,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     navigateToRecord(recordId) {
 
-        window.location.href = window.location.origin +'/lightning/r/'+recordId+'/view'
+        window.location.href = window.location.origin + '/lightning/r/' + recordId + '/view'
 
         /*this[NavigationMixin.Navigate]({
 
