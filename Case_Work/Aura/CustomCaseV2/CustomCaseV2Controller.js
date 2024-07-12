@@ -3,12 +3,20 @@
         window.addEventListener("keydown", function (event) {
             var kcode = event.code;
             if (kcode == 'Escape') {
-                console.log('escape key logged - Captured Key Press Event');
+                console.log('escape id pess - Outer Component');
                 event.preventDefault();
                 event.stopImmediatePropagation();
             }
         }, true);
+
         var recordId = component.get("v.recordId");
+        var url = window.location.href;
+        /** URL Parser Begin */
+        var queryString = url.split('?')[1];
+        helper.extractAccountId(component, queryString);
+        console.log('accountId => ' + component.get("v.accountId"));
+        /** URL Parser End */
+
         if (recordId) {
             var action = component.get("c.getCaseDetails");
             action.setParams({

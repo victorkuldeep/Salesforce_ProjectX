@@ -14,6 +14,7 @@ import LightningAlert from 'lightning/alert';
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     @api recordId
+    @api accountId
     @api isReadOnly
     @api objectApiName
     @track isLoading = false
@@ -25,7 +26,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     @track sections
     @track userProfileName
     @track hiddenFieldsContact = []
-    accountId
+    //accountId
     contactId
     isModalOpen = false // Ensure this property is defined
     selectedRecordTypeId
@@ -91,6 +92,8 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     connectedCallback() {
 
         console.log('Connected Callback Lifecycle Hook ' + this.recordId)
+        console.log('Account Id Received: ' + this.accountId);
+
         this.finalFieldConfig = this.recordId ? fieldConfigEdit : fieldConfig
         this.finalValueChangeMapper = this.recordId ? valueChangeMapperEdit : valueChangeMapper
         // Fetch record types
@@ -204,6 +207,17 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             this.overrideAdminVisibility()
             console.log('Override Done')
             this.caseStatus && this.readOnlyCaseStatus.includes(this.caseStatus) && this.recordId ? (this.triggerReadOnly = true) : console.log('No Match')
+
+            /** Auto populate Account Id */
+            if (this.accountId) {
+                this.fetchContacts()
+                const createContactHolder = this.template.querySelector('.exclusivity-show[data-recid="createContactHolder"]');
+                console.log(createContactHolder)
+                if (createContactHolder) {
+                    // Bugfix: Keep it hidden in case of Edit Mode
+                    this.accountId && !this.recordId ? createContactHolder.classList.remove('slds-hide') : createContactHolder.classList.add('slds-hide')
+                }
+            }
         }
     }
 

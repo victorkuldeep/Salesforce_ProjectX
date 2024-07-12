@@ -28,7 +28,7 @@ Description : Override for New Case and Edit Case
             <div class="slds-grid slds-wrap">
                 <!-- Left Column -->
                 <div class="slds-col slds-size_1-of-2">
-                    <lightning-input-field field-name="AccountId" disabled={isReadOnly}
+                    <lightning-input-field field-name="AccountId" value={accountId} disabled={isReadOnly}
                         onchange={handleFieldChange} variant="label-stacked"></lightning-input-field>
                         <lightning-combobox label="Contact" value={contactId} options={contactOptions}
                         onchange={handleFieldChange} disabled={isReadOnly} variant="label-stacked"></lightning-combobox>
