@@ -1,0 +1,5 @@
+Instructions -
+1. Deploy AURA
+2. Deploy Apex Classes
+3. Deploy LWC
+4. Override - New and Edit Case button in Lighnting App builder
