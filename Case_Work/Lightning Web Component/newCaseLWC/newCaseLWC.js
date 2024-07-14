@@ -26,7 +26,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     @track sections
     @track userProfileName
     @track hiddenFieldsContact = []
-    //accountId
     contactId
     isModalOpen = false // Ensure this property is defined
     selectedRecordTypeId
@@ -466,11 +465,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         this.isModalOpen = true // Open the modal when clicking the "+" icon
     }
 
-    /** method implemented to close the modal opened on UI */
+    /** method implemented to close the modal opened on UI for contact success */
 
     closeModal() {
-        //console.log('closing the window');
-        //window.location.href = window.location.origin +'/lightning/r/';
         this.isModalOpen = false
     }
 
