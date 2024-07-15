@@ -41,7 +41,6 @@
         }
     },
     handleSubmitSuccess: function (component, event, helper) {
-        console.log('Event has been caught from Controller ', JSON.stringify(event));
         var workspaceAPI = component.find("workspace");
         workspaceAPI.getFocusedTabInfo().then(function (response) {
             var focusedTabId = response.tabId;
@@ -67,19 +66,14 @@
                         console.log('--->Elements--> ' + JSON.stringify(subtab));
                         workspaceAPI.closeTab({ tabId: subtab.tabId });
                     }
-
                 });
-
             }
-
         })
             .catch(function (error) {
                 console.log(error);
             });
     },
     handleSubmitCancel: function (component, event, helper) {
-        console.log('Event has been caught from >>>> ', JSON.stringify(event));
-
         component.set("v.isModalOpen", false);
         // Navigate back to the Case tab list view
         var navService = component.find("navService");
