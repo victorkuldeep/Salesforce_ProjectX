@@ -569,12 +569,15 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     /** comtact creation success handler */
 
-    handleContactSuccess(event) {
+    async handleContactSuccess(event) {
 
+        let contactRecordCreated = event.detail.id
         this.isContactLoading = false
         this.showSuccessToast('Contact created successfully')
         this.closeModal()
-        this.fetchContacts() // Refresh contacts after new contact creation
+        await this.fetchContacts() // Refresh contacts after new contact creation
+        // New Change to Auto Populate the newly inserted contact field here
+        this.contactId = contactRecordCreated
     }
 
     /** Cancel button handler for contact modal */
