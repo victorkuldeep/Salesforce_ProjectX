@@ -132,7 +132,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     disconnectedCallback() {
         // Clear the timeout if the component is destroyed before the delay
         clearTimeout(this.delayTimeout);
-        console.log('Timer Off ' + this.userProfileName)
     }
 
     setHiddenFields() {
@@ -618,8 +617,11 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** Navigation handler */
 
     navigateToRecord(recordId) {
-
-        window.location.href = window.location.origin + '/lightning/r/' + recordId + '/view'
+        console.log('Navigating method ')
+        setTimeout(() => {
+            console.log('Setting up Location ')
+            window.location.href = window.location.origin + '/lightning/r/' + recordId + '/view'
+        }, 2500);
 
         /*this[NavigationMixin.Navigate]({
 

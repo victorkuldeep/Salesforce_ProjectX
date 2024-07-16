@@ -6,7 +6,7 @@
   @last modified by  : Kuldeep Singh
 -->
 <aura:component controller="CaseController"
-  implements="lightning:actionOverride,lightning:isUrlAddressable, force:hasRecordId" access="global">
+  implements="lightning:actionOverride,lightning:isUrlAddressable,force:hasRecordId" access="global">
   <aura:attribute name="recordId" type="String" />
   <aura:attribute name="isModalOpen" type="Boolean" default="false" />
   <aura:attribute name="caseRecord" type="Case" />

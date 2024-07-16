@@ -41,6 +41,7 @@
         }
     },
     handleSubmitSuccess: function (component, event, helper) {
+        console.log('Event has been caught from Controller ', JSON.stringify(event));
         var workspaceAPI = component.find("workspace");
         workspaceAPI.getFocusedTabInfo().then(function (response) {
             var focusedTabId = response.tabId;
@@ -48,6 +49,7 @@
             var parentTitle = response.title;
             if (response.title.includes('Edit')) {
                 workspaceAPI.closeTab({ tabId: focusedTabId });
+                console.log('Tab closed - ' + focusedTabId + '>>> ' + response.title)
             } else if (response.title.includes('New Case')) {
                 //workspaceAPI.closeTab({tabId: focusedTabId});
                 if (response.pageReference.state.ws) {
@@ -55,7 +57,6 @@
                 } else {
                     //window.location.href = window.location.origin+'/lightning/o/Case/list';
                 }
-
             }
             else {
                 response.subtabs.forEach(function (subtab) {
@@ -74,6 +75,8 @@
             });
     },
     handleSubmitCancel: function (component, event, helper) {
+        console.log('Event has been caught from >>>> ', JSON.stringify(event));
+
         component.set("v.isModalOpen", false);
         // Navigate back to the Case tab list view
         var navService = component.find("navService");
