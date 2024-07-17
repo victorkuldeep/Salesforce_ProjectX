@@ -31,6 +31,7 @@
 
                         closeCallback: function () {
                             console.log('LWC Closed.')
+                            component.destroy();
                         }
                     });
                     component.set("v.isModalOpen", true);

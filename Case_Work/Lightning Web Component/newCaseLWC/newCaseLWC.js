@@ -1,4 +1,5 @@
 import { LightningElement, api, track, wire } from 'lwc'
+import { IsConsoleNavigation, getFocusedTabInfo, closeTab } from 'lightning/platformWorkspaceApi'
 import { ShowToastEvent } from 'lightning/platformShowToastEvent'
 import { NavigationMixin } from 'lightning/navigation'
 import { getRecord } from 'lightning/uiRecordApi'
@@ -61,6 +62,10 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             console.log('User Profile is ' + this.userProfileName)
         }
     }
+
+    /** Wire Adapter to check if we are Console Apps */
+    @wire(IsConsoleNavigation)
+    isConsoleNavigation
 
     /** Wire Adapter to pull Contact Object information */
 
@@ -505,9 +510,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             composed: true,
             detail: caseId
         });
-        this.dispatchEvent(successEvent);
-        const closeEvent = new CustomEvent('hideModal', { detail: true });
-        this.dispatchEvent(closeEvent);
         this.navigateToRecord(caseId)
     }
 
@@ -522,9 +524,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 composed: true,
                 detail: caseId
             });
-            this.dispatchEvent(successEvent);
-            const closeEvent = new CustomEvent('hideModal', { detail: true });
-            this.dispatchEvent(closeEvent);
             this.navigateToRecord(caseId)
         } else {
             /** This is for New Mode */
@@ -533,11 +532,8 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 composed: true,
                 detail: this.recordId // undefined
             });
-            this.dispatchEvent(cancelEvent);
-            const closeEvent = new CustomEvent('hideModal', { detail: true });
-            this.dispatchEvent(closeEvent);
+            this.navigateToRecord(this.recordId)
         }
-
     }
 
     /** error form submit handler */
@@ -617,21 +613,46 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** Navigation handler */
 
     navigateToRecord(recordId) {
-        console.log('Navigating method ')
-        setTimeout(() => {
-            console.log('Setting up Location ')
-            window.location.href = window.location.origin + '/lightning/r/' + recordId + '/view'
-        }, 2500);
+        console.log('Navigating method ' + this.isConsoleNavigation)
+        if (this.isConsoleNavigation) {
+            this.closeTabSubtabsAndNavigate(recordId);
+        }
+    }
 
-        /*this[NavigationMixin.Navigate]({
-
-            type: 'standard__recordPage',
-
-            attributes: {
-                recordId: recordId,
-                objectApiName: 'Case',
-                actionName: 'view'
+    async closeTabSubtabsAndNavigate(recordId) {
+        const tabInfo = await getFocusedTabInfo()
+        console.log(JSON.stringify(tabInfo))
+        if (recordId) {
+            if (tabInfo.title.includes('Edit')) {
+                await closeTab(tabInfo.tabId)
+            } else {
+                // Check if Sub Tabs are open
+                if (tabInfo.subtabs) {
+                    tabInfo.subtabs.forEach(async tab => {
+                        if (tab.title.includes('Edit') || tab.title.includes('New Case')) {
+                            await closeTab(tab.tabId)
+                        }
+                    })
+                }
             }
-        });*/
+            // Navigate & Refresh
+            window.location.href = window.location.origin + '/lightning/r/' + recordId + '/view'
+        } else {
+            if (tabInfo.title.includes('New')) {
+                console.log('New Case Scenario ' + tabInfo.tabId + '>>>' + tabInfo.title)
+                await closeTab(tabInfo.tabId)
+                console.log('WS State ' + tabInfo.pageReference.state.ws)
+                if (tabInfo.pageReference.state.ws) {
+                    // Navigate & Refresh
+                    window.location.href = window.location.origin + '' + tabInfo.pageReference.state.ws;
+                } else {
+                    // Navigate to Default List View & Refresh
+                    window.location.href = window.location.origin + '/lightning/o/Case/list';
+                }
+            } else {
+                // Navigate to List View & Refresh
+                window.location.href = window.location.origin + '/lightning/o/Case/list';
+            }
+        }
     }
 }
