@@ -9,6 +9,12 @@ const readOnlyCaseStatus = ['xyz']
 // Defaut first Section name - statically mapped in LWC HTML
 const acSection = 'Account and Contact Details'
 
+/** This object mapping controls in which mode New Contact button will be visible on UI */
+const newContactVisibility = {
+    'New': true,
+    'Edit': false
+}
+
 /**
  * Description: This is field mapping for Contact New custom layout having contact field api name, required and disabled properties
  */
@@ -272,4 +278,4 @@ const sectionVisibilityConfig = {
     // Add more fieldName: value mappings here as needed
 };
 /** Exporting all constants */
-export {fieldMapperContactDefault,readOnlyCaseStatus,sectionVisibilityConfig, defaultContactRecordType,fieldMapperContact,fieldConfig,valueChangeMapper,fieldConfigEdit,valueChangeMapperEdit,acSection,sectionIndexMapper};
+export { newContactVisibility, fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, defaultContactRecordType, fieldMapperContact, fieldConfig, valueChangeMapper, fieldConfigEdit, valueChangeMapperEdit, acSection, sectionIndexMapper };
