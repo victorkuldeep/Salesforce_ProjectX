@@ -15,6 +15,7 @@ import LightningAlert from 'lightning/alert';
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     @api recordId
+    @api headerContent
     @api accountId
     @api isReadOnly
     @api objectApiName

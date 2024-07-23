@@ -17,6 +17,9 @@
         console.log('accountId => ' + component.get("v.accountId"));
         /** URL Parser End */
 
+        component.set("v.isReadOnly", false); // Example boolean value
+        component.set("v.objectApiName", "Case"); // Example Text
+
         if (recordId) {
             var action = component.get("c.getCaseDetails");
             action.setParams({
@@ -28,7 +31,7 @@
                     var caseRecord = response.getReturnValue();
                     var headerText = 'Edit Case - ' + caseRecord.CaseNumber + ' (' + caseRecord.Subject + ')';
                     component.set("v.headerText", headerText);
-                    helper.createLWC(component, headerText);
+                    //helper.createLWC(component, headerText);
                 } else {
                     console.error("Failed to fetch Case details with state: " + state);
                 }
@@ -37,7 +40,7 @@
         } else {
             var headerText = 'New Case';
             component.set("v.headerText", headerText);
-            helper.createLWC(component, headerText);
+            //helper.createLWC(component, headerText);
         }
     },
     handleSubmitSuccess: function (component, event, helper) {

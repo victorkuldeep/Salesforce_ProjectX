@@ -1,0 +1,7 @@
+.THIS .lwc-container {
+    padding: 0px;
+    /* Add padding around the LWC */
+
+    background-color: white;
+    /* Optional: Add background color */
+}
