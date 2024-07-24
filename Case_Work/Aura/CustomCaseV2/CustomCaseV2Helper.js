@@ -44,6 +44,7 @@
         );
     },
     extractAccountId: function (component, queryString) {
+
         var accountId = null;
         // Parse the URL to find the Account ID
         var urlParams = new URLSearchParams(queryString);
@@ -59,7 +60,16 @@
             if (accountIdMatch && accountIdMatch.length > 1) {
                 accountId = accountIdMatch[1];
             }
+        } else { // Bugfix - Component caching removed WS from URL and direct url received
+
+            // Extract the Account ID from the decoded URL
+            var accountIdMatch = queryString.match(/Account\/([a-zA-Z0-9]{18}|[a-zA-Z0-9]{15})/);
+
+            if (accountIdMatch && accountIdMatch.length > 1) {
+                accountId = accountIdMatch[1];
+            }
         }
+
         // Set the Account ID to the component attribute
         component.set("v.accountId", accountId);
     }

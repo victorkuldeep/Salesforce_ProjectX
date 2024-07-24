@@ -660,43 +660,58 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
         const tabInfo = await getFocusedTabInfo()
 
+        console.log('tabInfo ' + JSON.stringify(tabInfo))
+
         if (recordId) {
 
-            if (tabInfo.title.includes('Edit')) {
+            /** New Case Success Block with Record Id */
+
+            if (tabInfo.title.includes('New')) {
+
+                /** Navigate to Newly created case */
+                this.navigateToCaseRecord(recordId)
                 await closeTab(tabInfo.tabId)
+            }
+
+            if (tabInfo.title.includes('Edit')) {
+
+                await closeTab(tabInfo.tabId)
+
             } else {
                 // Check if Sub Tabs are open
                 if (tabInfo.subtabs) {
+
                     tabInfo.subtabs.forEach(async tab => {
+
                         if (tab.title.includes('Edit') || tab.title.includes('New Case')) {
+
                             await closeTab(tab.tabId)
                         }
                     })
                 }
             }
-            // Navigate & Refresh
-            window.location.href = window.location.origin + '/lightning/r/' + recordId + '/view'
-
         } else {
+
+            console.log('Cancel Action  ' + tabInfo.title)
 
             if (tabInfo.title.includes('New')) {
 
                 await closeTab(tabInfo.tabId)
-
-                console.log('WS State ' + tabInfo.pageReference.state.ws)
-
-                if (tabInfo.pageReference.state.ws) {
-                    // Navigate & Refresh
-                    window.location.href = window.location.origin + '' + tabInfo.pageReference.state.ws;
-
-                } else {
-                    // Navigate to Default List View & Refresh
-                    window.location.href = window.location.origin + '/lightning/o/Case/list';
-                }
-            } else {
-                // Navigate to List View & Refresh
-                window.location.href = window.location.origin + '/lightning/o/Case/list';
             }
         }
+    }
+
+    /** This method is for Navigating to newly created Case using Navigation Mixing module */
+    navigateToCaseRecord(recordId) {
+
+        // Navigate to the Account home page
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: recordId,
+                objectApiName: 'Case',
+                actionName: 'view'
+            }
+        });
     }
 }
