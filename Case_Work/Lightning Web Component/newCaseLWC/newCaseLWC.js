@@ -151,6 +151,14 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      */
 
     handleOnLoad(event) {
+
+        let triggerClosedStatusValidation = false
+        const element = this.template.querySelector(`[data-name="Status"]`);
+
+        if (element && element.value == 'Closed') {
+            this.handleCaseCloseValidation(true)
+        }
+
         if (!this.userProfileName) {
             this.delayTimeout = setTimeout(() => {
                 if (!this.overrideFlag) {
@@ -158,7 +166,17 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 }
             }, 3000);
         }
+
         const fieldsData = this.recordId ? event.detail.records[this.recordId].fields : event.detail.record.fields
+
+        Object.keys(fieldsData).forEach(apiName => {
+
+            if (apiName == 'Status') {
+                if (fieldsData[apiName].value == 'Closed') {
+                    triggerClosedStatusValidation = true
+                }
+            }
+        });
 
         // Execute logic once and avoid re-run on multiple on laods
         if (!this.initialLoadStatus) {
@@ -181,6 +199,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                     }
                 }
             });
+
             this.initialLoadStatus = false // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
 
             /** Below logic is conditional and need to be implemented as per requirements 
@@ -229,6 +248,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 }
             }
         }
+
+        //Bugfix - Closed status validation to auto apply on load with Closed Status
+        triggerClosedStatusValidation ? this.handleCaseCloseValidation(true) : console.log('No Update to Validation')
     }
 
     /** This method overides disabled/readonly for System Administrators to make changes */
@@ -267,23 +289,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     fieldChangeHandler(event) {
 
         if (event.target.fieldName == 'Status' && event.target.value != 'Closed' && this.customStatusResetRequiredValidationFlag) {
-            // Closed Validation Logic Begin
-            // Looping over the key-value pairs in the object
-            Object.entries(this.customStatusRequiredValidation).forEach(([status, fields]) => {
-                // Split the comma-separated values into an array
-                const fieldsArray = fields.split(',');
-                // Loop through each field
-                fieldsArray.forEach(field => {
-
-                    console.log(`Required Field: ${field.trim()}`);
-                    // Manipulate DOM Conditionally using Data Id Attributes
-                    const element = this.template.querySelector(`[data-name="${field.trim()}"]`);
-                    if (element) {
-                        element.required = false
-                        this.customStatusResetRequiredValidationFlag = false;
-                    }
-                });
-            });
+            this.handleCaseCloseValidation(false)
         }
 
         // Check if onChange is defined in value change mapper static data structure
@@ -345,24 +351,29 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
         /** Custom Validaton */
         if (event.target.fieldName == 'Status' && event.target.value == 'Closed') {
-            // Closed Validation Logic Begin
-            // Looping over the key-value pairs in the object
-            Object.entries(this.customStatusRequiredValidation).forEach(([status, fields]) => {
-                // Split the comma-separated values into an array
-                const fieldsArray = fields.split(',');
-                // Loop through each field
-                fieldsArray.forEach(field => {
-
-                    console.log(`Required Field: ${field.trim()}`);
-                    // Manipulate DOM Conditionally using Data Id Attributes
-                    const element = this.template.querySelector(`[data-name="${field.trim()}"]`);
-                    if (element) {
-                        element.required = true
-                        this.customStatusResetRequiredValidationFlag = true;
-                    }
-                });
-            });
+            this.handleCaseCloseValidation(true)
         }
+    }
+
+    handleCaseCloseValidation(flag) {
+        // Closed Validation Logic Begin
+        // Looping over the key-value pairs in the object
+        Object.entries(this.customStatusRequiredValidation).forEach(([status, fields]) => {
+            // Split the comma-separated values into an array
+            const fieldsArray = fields.split(',');
+            // Loop through each field
+            fieldsArray.forEach(field => {
+
+                console.log(`Required Field: ${field.trim()}`);
+                // Manipulate DOM Conditionally using Data Id Attributes
+                const element = this.template.querySelector(`[data-name="${field.trim()}"]`);
+
+                if (element) {
+                    element.required = flag
+                    this.customStatusResetRequiredValidationFlag = flag;
+                }
+            });
+        });
     }
 
     /** This method finds the Section from UI via Class Selector and appends and removes slds-hide class */
