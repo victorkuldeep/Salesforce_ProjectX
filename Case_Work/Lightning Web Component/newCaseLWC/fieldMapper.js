@@ -15,6 +15,11 @@ const newContactVisibility = {
     'Edit': false
 }
 
+/** This will trigger required validation when Status is closed or any other value */
+const customStatusRequiredValidation = {
+    'Closed': 'Origin,Department__c,Category__c,Sub_Category__c,Internal_Resolution_Notes__c'
+}
+
 /**
  * Description: This is field mapping for Contact New custom layout having contact field api name, required and disabled properties
  */
@@ -278,4 +283,4 @@ const sectionVisibilityConfig = {
     // Add more fieldName: value mappings here as needed
 };
 /** Exporting all constants */
-export { newContactVisibility, fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, defaultContactRecordType, fieldMapperContact, fieldConfig, valueChangeMapper, fieldConfigEdit, valueChangeMapperEdit, acSection, sectionIndexMapper };
+export { customStatusRequiredValidation, newContactVisibility, fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, defaultContactRecordType, fieldMapperContact, fieldConfig, valueChangeMapper, fieldConfigEdit, valueChangeMapperEdit, acSection, sectionIndexMapper };

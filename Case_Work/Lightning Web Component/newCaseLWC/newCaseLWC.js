@@ -6,7 +6,7 @@ import { getRecord } from 'lightning/uiRecordApi'
 import getContacts from '@salesforce/apex/CaseController.getContacts'
 import getRecordTypeByName from '@salesforce/apex/ContactController.getRecordTypeByName'
 import { getObjectInfo } from 'lightning/uiObjectInfoApi'
-import { newContactVisibility, fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, fieldMapperContact, valueChangeMapper, fieldConfig, valueChangeMapperEdit, fieldConfigEdit, acSection, sectionIndexMapper, defaultContactRecordType } from './fieldMapper'
+import { customStatusRequiredValidation, newContactVisibility, fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, fieldMapperContact, valueChangeMapper, fieldConfig, valueChangeMapperEdit, fieldConfigEdit, acSection, sectionIndexMapper, defaultContactRecordType } from './fieldMapper'
 import CONTACT_OBJECT from '@salesforce/schema/Contact'
 import ProfileName from '@salesforce/schema/User.Profile.Name' //this scoped module imports the current user profile name
 import Id from '@salesforce/user/Id';
@@ -54,6 +54,8 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     delayTimeout
     overrideFlag = false
     newContactVisibility = newContactVisibility
+    customStatusRequiredValidation = customStatusRequiredValidation
+    customStatusResetRequiredValidationFlag = false
 
     /** Wire Adapter to pull logged in user Profile */
 
@@ -264,6 +266,26 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     fieldChangeHandler(event) {
 
+        if (event.target.fieldName == 'Status' && event.target.value != 'Closed' && this.customStatusResetRequiredValidationFlag) {
+            // Closed Validation Logic Begin
+            // Looping over the key-value pairs in the object
+            Object.entries(this.customStatusRequiredValidation).forEach(([status, fields]) => {
+                // Split the comma-separated values into an array
+                const fieldsArray = fields.split(',');
+                // Loop through each field
+                fieldsArray.forEach(field => {
+
+                    console.log(`Required Field: ${field.trim()}`);
+                    // Manipulate DOM Conditionally using Data Id Attributes
+                    const element = this.template.querySelector(`[data-name="${field.trim()}"]`);
+                    if (element) {
+                        element.required = false
+                        this.customStatusResetRequiredValidationFlag = false;
+                    }
+                });
+            });
+        }
+
         // Check if onChange is defined in value change mapper static data structure
         if (this.finalValueChangeMapper[event.target.fieldName]) {
             this.initialLoadStatus = true // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
@@ -319,6 +341,27 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             /** This Method will override Required property for System Admin and make all fields on form as Editable even if onchange handler brings read only */
 
             this.overrideAdminVisibility()
+        }
+
+        /** Custom Validaton */
+        if (event.target.fieldName == 'Status' && event.target.value == 'Closed') {
+            // Closed Validation Logic Begin
+            // Looping over the key-value pairs in the object
+            Object.entries(this.customStatusRequiredValidation).forEach(([status, fields]) => {
+                // Split the comma-separated values into an array
+                const fieldsArray = fields.split(',');
+                // Loop through each field
+                fieldsArray.forEach(field => {
+
+                    console.log(`Required Field: ${field.trim()}`);
+                    // Manipulate DOM Conditionally using Data Id Attributes
+                    const element = this.template.querySelector(`[data-name="${field.trim()}"]`);
+                    if (element) {
+                        element.required = true
+                        this.customStatusResetRequiredValidationFlag = true;
+                    }
+                });
+            });
         }
     }
 
