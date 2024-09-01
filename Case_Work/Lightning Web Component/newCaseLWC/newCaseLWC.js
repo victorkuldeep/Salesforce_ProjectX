@@ -6,7 +6,7 @@ import { getRecord } from 'lightning/uiRecordApi'
 import getContacts from '@salesforce/apex/CaseController.getContacts'
 import getRecordTypeByName from '@salesforce/apex/ContactController.getRecordTypeByName'
 import { getObjectInfo } from 'lightning/uiObjectInfoApi'
-import { newContactVisibility, fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, fieldMapperContact, valueChangeMapper, fieldConfig, valueChangeMapperEdit, fieldConfigEdit, acSection, sectionIndexMapper, defaultContactRecordType } from './fieldMapper'
+import { customStatusRequiredValidation, newContactVisibility, fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, fieldMapperContact, valueChangeMapper, fieldConfig, valueChangeMapperEdit, fieldConfigEdit, acSection, sectionIndexMapper, defaultContactRecordType } from './fieldMapper'
 import CONTACT_OBJECT from '@salesforce/schema/Contact'
 import ProfileName from '@salesforce/schema/User.Profile.Name' //this scoped module imports the current user profile name
 import Id from '@salesforce/user/Id';
@@ -15,6 +15,7 @@ import LightningAlert from 'lightning/alert';
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     @api recordId
+    @api headerContent
     @api accountId
     @api isReadOnly
     @api objectApiName
@@ -53,6 +54,8 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     delayTimeout
     overrideFlag = false
     newContactVisibility = newContactVisibility
+    customStatusRequiredValidation = customStatusRequiredValidation
+    customStatusResetRequiredValidationFlag = false
 
     /** Wire Adapter to pull logged in user Profile */
 
@@ -148,6 +151,14 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      */
 
     handleOnLoad(event) {
+
+        let triggerClosedStatusValidation = false
+        const element = this.template.querySelector(`[data-name="Status"]`);
+
+        if (element && element.value == 'Closed') {
+            this.handleCaseCloseValidation(true)
+        }
+
         if (!this.userProfileName) {
             this.delayTimeout = setTimeout(() => {
                 if (!this.overrideFlag) {
@@ -155,7 +166,17 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 }
             }, 3000);
         }
+
         const fieldsData = this.recordId ? event.detail.records[this.recordId].fields : event.detail.record.fields
+
+        Object.keys(fieldsData).forEach(apiName => {
+
+            if (apiName == 'Status') {
+                if (fieldsData[apiName].value == 'Closed') {
+                    triggerClosedStatusValidation = true
+                }
+            }
+        });
 
         // Execute logic once and avoid re-run on multiple on laods
         if (!this.initialLoadStatus) {
@@ -178,6 +199,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                     }
                 }
             });
+
             this.initialLoadStatus = false // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
 
             /** Below logic is conditional and need to be implemented as per requirements 
@@ -226,6 +248,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 }
             }
         }
+
+        //Bugfix - Closed status validation to auto apply on load with Closed Status
+        triggerClosedStatusValidation ? this.handleCaseCloseValidation(true) : console.log('No Update to Validation')
     }
 
     /** This method overides disabled/readonly for System Administrators to make changes */
@@ -262,6 +287,10 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      */
 
     fieldChangeHandler(event) {
+
+        if (event.target.fieldName == 'Status' && event.target.value != 'Closed' && this.customStatusResetRequiredValidationFlag) {
+            this.handleCaseCloseValidation(false)
+        }
 
         // Check if onChange is defined in value change mapper static data structure
         if (this.finalValueChangeMapper[event.target.fieldName]) {
@@ -319,6 +348,32 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
             this.overrideAdminVisibility()
         }
+
+        /** Custom Validaton */
+        if (event.target.fieldName == 'Status' && event.target.value == 'Closed') {
+            this.handleCaseCloseValidation(true)
+        }
+    }
+
+    handleCaseCloseValidation(flag) {
+        // Closed Validation Logic Begin
+        // Looping over the key-value pairs in the object
+        Object.entries(this.customStatusRequiredValidation).forEach(([status, fields]) => {
+            // Split the comma-separated values into an array
+            const fieldsArray = fields.split(',');
+            // Loop through each field
+            fieldsArray.forEach(field => {
+
+                console.log(`Required Field: ${field.trim()}`);
+                // Manipulate DOM Conditionally using Data Id Attributes
+                const element = this.template.querySelector(`[data-name="${field.trim()}"]`);
+
+                if (element) {
+                    element.required = flag
+                    this.customStatusResetRequiredValidationFlag = flag;
+                }
+            });
+        });
     }
 
     /** This method finds the Section from UI via Class Selector and appends and removes slds-hide class */
@@ -659,43 +714,58 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
         const tabInfo = await getFocusedTabInfo()
 
+        console.log('tabInfo ' + JSON.stringify(tabInfo))
+
         if (recordId) {
 
-            if (tabInfo.title.includes('Edit')) {
+            /** New Case Success Block with Record Id */
+
+            if (tabInfo.title.includes('New')) {
+
+                /** Navigate to Newly created case */
+                this.navigateToCaseRecord(recordId)
                 await closeTab(tabInfo.tabId)
+            }
+
+            if (tabInfo.title.includes('Edit')) {
+
+                await closeTab(tabInfo.tabId)
+
             } else {
                 // Check if Sub Tabs are open
                 if (tabInfo.subtabs) {
+
                     tabInfo.subtabs.forEach(async tab => {
+
                         if (tab.title.includes('Edit') || tab.title.includes('New Case')) {
+
                             await closeTab(tab.tabId)
                         }
                     })
                 }
             }
-            // Navigate & Refresh
-            window.location.href = window.location.origin + '/lightning/r/' + recordId + '/view'
-
         } else {
+
+            console.log('Cancel Action  ' + tabInfo.title)
 
             if (tabInfo.title.includes('New')) {
 
                 await closeTab(tabInfo.tabId)
-
-                console.log('WS State ' + tabInfo.pageReference.state.ws)
-
-                if (tabInfo.pageReference.state.ws) {
-                    // Navigate & Refresh
-                    window.location.href = window.location.origin + '' + tabInfo.pageReference.state.ws;
-
-                } else {
-                    // Navigate to Default List View & Refresh
-                    window.location.href = window.location.origin + '/lightning/o/Case/list';
-                }
-            } else {
-                // Navigate to List View & Refresh
-                window.location.href = window.location.origin + '/lightning/o/Case/list';
             }
         }
+    }
+
+    /** This method is for Navigating to newly created Case using Navigation Mixing module */
+    navigateToCaseRecord(recordId) {
+
+        // Navigate to the Account home page
+        this[NavigationMixin.Navigate]({
+            type: 'standard__recordPage',
+            attributes: {
+                recordId: recordId,
+                objectApiName: 'Case',
+                actionName: 'view'
+            }
+        });
     }
 }

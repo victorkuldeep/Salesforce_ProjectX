@@ -2,7 +2,7 @@
   @description       : 
   @author            : Kuldeep Singh
   @group             : 
-  @last modified on  : 07-13-2024
+  @last modified on  : 07-24-2024
   @last modified by  : Kuldeep Singh
 -->
 <aura:component controller="CaseController"
@@ -12,6 +12,8 @@
   <aura:attribute name="caseRecord" type="Case" />
   <aura:attribute name="headerText" type="String" />
   <aura:attribute name="accountId" type="String" />
+  <aura:attribute name="objectApiName" type="String" />
+  <aura:attribute name="isReadOnly" type="Boolean" />
   <aura:attribute name="pageReference" type="Object" />
   <lightning:overlayLibrary aura:id="overlayLib" />
   <lightning:navigation aura:id="navService" />
@@ -21,4 +23,9 @@
   <aura:if isTrue="{!v.isModalOpen}">
     <div aura:id="lwcContainer"></div>
   </aura:if>
+
+  <div class="lwc-container">
+    <c:newCaseLWC recordId="{!v.recordId}" isReadOnly="{!v.isReadOnly}" objectApiName="{!v.objectApiName}"
+      accountId="{!v.accountId}" headerContent="{!v.headerText}" />
+  </div>
 </aura:component>
