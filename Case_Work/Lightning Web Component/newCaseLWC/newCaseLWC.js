@@ -465,7 +465,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 right.push(field)
             }
         });
-        return { left, right }
+        const cleanLeft = left.filter((field) => Object.keys(field).length > 0);
+        const cleanRight = right.filter((field) => Object.keys(field).length > 0);
+        return { left: cleanLeft, right: cleanRight };
     }
 
     /** this method is implemented to handle Account and Contact change
