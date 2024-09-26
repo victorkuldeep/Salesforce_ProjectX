@@ -3,7 +3,7 @@
 * @Description :
 * @Author :
 * @Last Modified By : Kuldeep Singh
-* @Last Modified On : 09-25-2024
+* @Last Modified On : 09-27-2024
 * @Modification Log :
 *==============================================================================
 * Ver | Date | Author | Modification
@@ -28,11 +28,13 @@ global class EmailPublisherForCase implements QuickAction.QuickActionDefaultsHan
         // Fetch the case associated with the email context
         Case c = [SELECT CaseNumber, Priority, SuppliedEmail FROM Case WHERE Id = :sendEmailDefaults.getContextId()];
         
+        OrgWideEmailAddress owea = [Select Id, Address, DisplayName  from OrgWideEmailAddress where DisplayName =: System.Label.Default_Reply_To_Display_Name LIMIT 1];
+        
         // Replace with the actual email-to-case handler default email address if SuppliedEMail is not available
-        String emailToCaseAddress = 'xxx@yyy.com';
+        String emailToCaseAddress = owea.Address;
         
         // Set the 'From' address to the Email-to-Case handler email address
-        emailMessage.fromAddress = c.SuppliedEmail != null ? c.SuppliedEmail : emailToCaseAddress;
+        emailMessage.fromAddress = emailToCaseAddress;//c.SuppliedEmail != null ? c.SuppliedEmail : emailToCaseAddress;
 
         /** Any other pre-setup can be implemented here like templates and all */
     }
