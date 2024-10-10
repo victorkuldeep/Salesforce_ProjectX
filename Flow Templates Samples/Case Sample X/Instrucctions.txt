@@ -1,0 +1,6 @@
+Create Flow Variable - Formula TEXT
+
+Name - caseURL
+Value - LEFT({!$Api.Partner_Server_URL_260},FIND('/services',{!$Api.Partner_Server_URL_260})) &{!$Record.Id}
+
+Create Text Template and replace HTML Sample X content and save and use in EMAILS

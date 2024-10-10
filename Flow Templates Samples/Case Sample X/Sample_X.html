@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <div>
+    <p>Case# {!$Record.CaseNumber} has been assigned to Product Operations.</p>
+    <p><strong>Subject: </strong> {!$Record.Subject}</p>
+    <p><strong>Description:</strong> {!$Record.Description}</p>
+    <p><strong>Account:</strong> {!$Record.Account.Name}</p>
+    <p><strong>MID:</strong> {!$Record.Account.Merchant_Id __ c}</p>
+    <p><strong>Contact:</strong> {!$Record.Contact.Contact_Name_c}</p>
+    <p><strong>Web Name:</strong> {!$Record.SuppliedName}</p>
+    <p><strong>Web Email:</strong> {!$Record.SuppliedEmail}</p>
+    <p><strong>Case Link:</strong> <a href="{!caseURL}" target="_blank">{!$Record.CaseNumber}</a></p>
+    <p>Please review and take any necessary actions</p>
+  </div>
+</body>
+</html>
