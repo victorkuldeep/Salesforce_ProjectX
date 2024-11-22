@@ -1,0 +1,20 @@
+<!--
+  @description       : 
+  @author            : Kuldeep Singh
+  @group             : 
+  @last modified on  : 11-22-2024
+  @last modified by  : Kuldeep Singh
+-->
+<template>
+    <div class="slds-form-element">
+        <template if:true={mandatory}>
+            <label class="slds-form-element__label"> <span style="color: rgb(234, 0, 30)">*&nbsp;</span>{fieldLabel}</label>
+        </template>
+        <template if:false={mandatory}>
+            <label class="slds-form-element__label" for="phone">{fieldLabel}</label>
+        </template>
+        <div class="slds-form-element__control">
+            <input type="tel" name="phone" data-id="phone" onkeyup={handleInputChange} />
+        </div>
+    </div>
+</template>

@@ -1,74 +1,92 @@
-import { LightningElement, api, track, wire } from 'lwc'
-import { IsConsoleNavigation, getFocusedTabInfo, closeTab } from 'lightning/platformWorkspaceApi'
-import { ShowToastEvent } from 'lightning/platformShowToastEvent'
-import { NavigationMixin } from 'lightning/navigation'
-import { getRecord } from 'lightning/uiRecordApi'
-import getContacts from '@salesforce/apex/CaseController.getContacts'
-import getRecordTypeByName from '@salesforce/apex/ContactController.getRecordTypeByName'
-import { getObjectInfo } from 'lightning/uiObjectInfoApi'
-import { customStatusRequiredValidation, newContactVisibility, fieldMapperContactDefault, readOnlyCaseStatus, sectionVisibilityConfig, fieldMapperContact, valueChangeMapper, fieldConfig, valueChangeMapperEdit, fieldConfigEdit, acSection, sectionIndexMapper, defaultContactRecordType } from './fieldMapper'
-import CONTACT_OBJECT from '@salesforce/schema/Contact'
-import ProfileName from '@salesforce/schema/User.Profile.Name' //this scoped module imports the current user profile name
-import Id from '@salesforce/user/Id';
-import LightningAlert from 'lightning/alert';
+import { LightningElement, api, track, wire } from "lwc";
+import { IsConsoleNavigation, getFocusedTabInfo, closeTab } from "lightning/platformWorkspaceApi";
+import { ShowToastEvent } from "lightning/platformShowToastEvent";
+import { NavigationMixin } from "lightning/navigation";
+import { getRecord } from "lightning/uiRecordApi";
+import getContacts from "@salesforce/apex/CaseController.getContacts";
+import getRecordTypeByName from "@salesforce/apex/ContactController.getRecordTypeByName";
+import { getObjectInfo } from "lightning/uiObjectInfoApi";
+import {
+    customStatusRequiredValidation,
+    newContactVisibility,
+    fieldMapperContactDefault,
+    readOnlyCaseStatus,
+    sectionVisibilityConfig,
+    fieldMapperContact,
+    valueChangeMapper,
+    fieldConfig,
+    valueChangeMapperEdit,
+    fieldConfigEdit,
+    acSection,
+    sectionIndexMapper,
+    defaultContactRecordType
+} from "./fieldMapper";
+import CONTACT_OBJECT from "@salesforce/schema/Contact";
+import ProfileName from "@salesforce/schema/User.Profile.Name"; //this scoped module imports the current user profile name
+import Id from "@salesforce/user/Id";
+import LightningAlert from "lightning/alert";
 
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
+    @api recordId;
+    @api headerContent;
+    @api accountId;
+    @api isReadOnly;
+    @api objectApiName;
+    @track isLoading = false;
+    @track isContactLoading = false;
+    @track contactOptions = [];
+    @track previousPicklistValue = "";
+    @track currentPicklistValue = "";
+    @track recordsData;
+    @track sections;
+    @track userProfileName;
+    @track hiddenFieldsContact = [];
+    isLoadScript;
+    contactId;
+    isModalOpen = false; // Ensure this property is defined
+    selectedRecordTypeId;
+    selectedRecordTypeName;
+    fieldConfig = fieldConfig;
+    valueChangeMapper = valueChangeMapper;
+    fieldConfigEdit = fieldConfigEdit;
+    valueChangeMapperEdit = valueChangeMapperEdit;
+    sectionIndexMapper = sectionIndexMapper;
+    finalFieldConfig;
+    finalValueChangeMapper;
+    acSection = acSection;
+    initialLoadStatus = false;
+    sectionIndex = 0;
+    defaultContactRecordType = defaultContactRecordType;
+    elemKey;
+    userid = Id;
+    sectionVisibilityConfig = sectionVisibilityConfig;
+    readOnlyCaseStatus = readOnlyCaseStatus;
+    caseStatus;
+    triggerReadOnly = false;
+    true_val = true;
+    fieldMapperContactDefault = fieldMapperContactDefault;
+    delayTimeout;
+    overrideFlag = false;
+    newContactVisibility = newContactVisibility;
+    customStatusRequiredValidation = customStatusRequiredValidation;
+    customStatusResetRequiredValidationFlag = false;
 
-    @api recordId
-    @api headerContent
-    @api accountId
-    @api isReadOnly
-    @api objectApiName
-    @track isLoading = false
-    @track isContactLoading = false
-    @track contactOptions = []
-    @track previousPicklistValue = ''
-    @track currentPicklistValue = ''
-    @track recordsData
-    @track sections
-    @track userProfileName
-    @track hiddenFieldsContact = []
-    contactId
-    isModalOpen = false // Ensure this property is defined
-    selectedRecordTypeId
-    selectedRecordTypeName
-    fieldConfig = fieldConfig
-    valueChangeMapper = valueChangeMapper
-    fieldConfigEdit = fieldConfigEdit
-    valueChangeMapperEdit = valueChangeMapperEdit
-    sectionIndexMapper = sectionIndexMapper
-    finalFieldConfig
-    finalValueChangeMapper
-    acSection = acSection
-    initialLoadStatus = false
-    sectionIndex = 0
-    defaultContactRecordType = defaultContactRecordType
-    elemKey
-    userid = Id
-    sectionVisibilityConfig = sectionVisibilityConfig
-    readOnlyCaseStatus = readOnlyCaseStatus
-    caseStatus
-    triggerReadOnly = false
-    true_val = true
-    fieldMapperContactDefault = fieldMapperContactDefault
-    delayTimeout
-    overrideFlag = false
-    newContactVisibility = newContactVisibility
-    customStatusRequiredValidation = customStatusRequiredValidation
-    customStatusResetRequiredValidationFlag = false
+    homePhone;
+    otherPhone;
+    preferredPhone;
 
     /** Wire Adapter to pull logged in user Profile */
 
     @wire(getRecord, { recordId: Id, fields: [ProfileName] })
     userDetails({ error, data }) {
         if (data && data.fields.Profile.value != null) {
-            this.userProfileName = data.fields.Profile.value.fields.Name.value
+            this.userProfileName = data.fields.Profile.value.fields.Name.value;
         }
     }
 
     /** Wire Adapter to check if we are Console Apps */
     @wire(IsConsoleNavigation)
-    isConsoleNavigation
+    isConsoleNavigation;
 
     /** Wire Adapter to pull Contact Object information */
 
@@ -77,14 +95,14 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
     /** Wire Adapter to pre-populate combo box once we have record id in case of Edit Mode */
 
-    @wire(getRecord, { recordId: '$recordId', fields: ['Case.AccountId', 'Case.ContactId'] })
+    @wire(getRecord, { recordId: "$recordId", fields: ["Case.AccountId", "Case.ContactId"] })
     wiredAccount({ error, data }) {
         if (data) {
             this.accountId = data.fields.AccountId.value;
             this.contactId = data.fields.ContactId.value;
             this.fetchContacts();
         } else if (error) {
-            this.showErrorToast('Error fetching record details');
+            this.showErrorToast("Error fetching record details");
         }
     }
 
@@ -94,12 +112,11 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      * Fetches record types for contact
      * Case record type will direct to default as per user profile - not handled like contact
      * Re-initilizes form from field mapper to invalidate the cache once New is clicked again - BUGFIX
-    */
+     */
 
     connectedCallback() {
-
-        this.finalFieldConfig = this.recordId ? fieldConfigEdit : fieldConfig
-        this.finalValueChangeMapper = this.recordId ? valueChangeMapperEdit : valueChangeMapper
+        this.finalFieldConfig = this.recordId ? fieldConfigEdit : fieldConfig;
+        this.finalValueChangeMapper = this.recordId ? valueChangeMapperEdit : valueChangeMapper;
         // Fetch record types
         this.fetchRecordTypes();
 
@@ -107,7 +124,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             this.isReadOnly = true;
         }
         // Re-Initilize in Connected Callback lifecycle hook - BUGFIX: Cache rendering old state of array on UI
-        this.sections = this.finalFieldConfig.map(section => ({
+        this.sections = this.finalFieldConfig.map((section) => ({
             sectionName: section.sectionName[0],
             sectionKey: section.sectionName[1],
             columns: section.columns.map((column, columnIndex) => ({
@@ -116,20 +133,19 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             }))
         }));
         // BUGFIX: To Trigger Reactivity on User Interface and clears previous object state
-        this.sections = JSON.parse(JSON.stringify(this.sections))
-        this.setHiddenFields()
+        this.sections = JSON.parse(JSON.stringify(this.sections));
+        this.setHiddenFields();
     }
 
     /** LWC Lifecycle hook to run everytime once rendering is done on UI */
 
     renderedCallback() {
-
         /** Bugfix: Closed status not triggering readonly for DOM manipulated in between
          * This will refer updated DOM
          */
         if (this.triggerReadOnly) {
-            this.makeCaseReadOnly()
-            this.triggerReadOnly = false
+            this.makeCaseReadOnly();
+            this.triggerReadOnly = false;
         }
     }
 
@@ -151,129 +167,119 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      */
 
     handleOnLoad(event) {
-
-        let triggerClosedStatusValidation = false
+        let triggerClosedStatusValidation = false;
         const element = this.template.querySelector(`[data-name="Status"]`);
 
-        if (element && element.value == 'Closed') {
-            this.handleCaseCloseValidation(true)
+        if (element && element.value == "Closed") {
+            this.handleCaseCloseValidation(true);
         }
 
         if (!this.userProfileName) {
             this.delayTimeout = setTimeout(() => {
                 if (!this.overrideFlag) {
-                    this.overrideAdminVisibility()
+                    this.overrideAdminVisibility();
                 }
             }, 3000);
         }
 
-        const fieldsData = this.recordId ? event.detail.records[this.recordId].fields : event.detail.record.fields
+        const fieldsData = this.recordId ? event.detail.records[this.recordId].fields : event.detail.record.fields;
 
-        Object.keys(fieldsData).forEach(apiName => {
-
-            if (apiName == 'Status') {
-                if (fieldsData[apiName].value == 'Closed') {
-                    triggerClosedStatusValidation = true
+        Object.keys(fieldsData).forEach((apiName) => {
+            if (apiName == "Status") {
+                if (fieldsData[apiName].value == "Closed") {
+                    triggerClosedStatusValidation = true;
                 }
             }
         });
 
         // Execute logic once and avoid re-run on multiple on laods
         if (!this.initialLoadStatus) {
-
             // loop over all fields coming from field mapper and load additional fields as per conditional mapping during initial on load
-            Object.keys(fieldsData).forEach(apiName => {
-
-                if (apiName == 'Status') {
-                    this.caseStatus = fieldsData[apiName].value
+            Object.keys(fieldsData).forEach((apiName) => {
+                if (apiName == "Status") {
+                    this.caseStatus = fieldsData[apiName].value;
                 }
 
                 if (this.finalValueChangeMapper[apiName]) {
-
-                    this.sectionIndex = this.sectionIndexMapper[apiName]
-                    this.recordsData = { ...this.recordsData, [apiName]: fieldsData[apiName].value }
+                    this.sectionIndex = this.sectionIndexMapper[apiName];
+                    this.recordsData = { ...this.recordsData, [apiName]: fieldsData[apiName].value };
 
                     if (fieldsData[apiName].value != null) {
-                        const fieldsDataToAdd = this.finalValueChangeMapper[apiName][0][fieldsData[apiName].value]
-                        fieldsDataToAdd ? this.addFieldsToColumn(this.sections[this.sectionIndex].columns[1], fieldsDataToAdd) : console.log(`No Mapping in onChangeMapper for Value ${fieldsData[apiName].value}`) //BUGFIX: If no valid mapping in fieldMapper then handle error
+                        const fieldsDataToAdd = this.finalValueChangeMapper[apiName][0][fieldsData[apiName].value];
+                        fieldsDataToAdd ? this.addFieldsToColumn(this.sections[this.sectionIndex].columns[1], fieldsDataToAdd) : console.log(`No Mapping in onChangeMapper for Value ${fieldsData[apiName].value}`); //BUGFIX: If no valid mapping in fieldMapper then handle error
                     }
                 }
             });
 
-            this.initialLoadStatus = false // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
+            this.initialLoadStatus = false; // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
 
-            /** Below logic is conditional and need to be implemented as per requirements 
-             * <<API>> Name Value on UI == <<Required Value>> ? Show : Hide [Required Section Key] 
-             * 
+            /** Below logic is conditional and need to be implemented as per requirements
+             * <<API>> Name Value on UI == <<Required Value>> ? Show : Hide [Required Section Key]
+             *
              * Example: Origin is API Name and Web is Value
              *
-            */
+             */
 
-            Object.keys(fieldsData).forEach(apiName => {
-
+            Object.keys(fieldsData).forEach((apiName) => {
                 const fieldName = apiName;
-                const fieldValue = fieldsData[fieldName].value
+                const fieldValue = fieldsData[fieldName].value;
 
                 if (sectionVisibilityConfig[fieldName]) {
-
                     const configs = sectionVisibilityConfig[fieldName][fieldValue] || sectionVisibilityConfig[fieldName].default;
                     if (configs) {
-                        configs.forEach(config => {
+                        configs.forEach((config) => {
                             this.handleSectionVisibility(config.section, config.action);
                         });
                     } else {
                         console.log(`No config found for ${fieldName} with value ${fieldValue}`);
                     }
                 }
-            })
+            });
 
             // Depreciated: fieldsData['Origin'].value == 'Web' ? this.handleSectionVisibility('System_Information','Show') : this.handleSectionVisibility('System_Information','Hide')
 
             /** This Method will override Required property for System Admin and make all fields on form as Editable */
 
-            this.overrideAdminVisibility()
-            this.caseStatus && this.readOnlyCaseStatus.includes(this.caseStatus) && this.recordId ? (this.triggerReadOnly = true) : console.log('No Match')
+            this.overrideAdminVisibility();
+            this.caseStatus && this.readOnlyCaseStatus.includes(this.caseStatus) && this.recordId ? (this.triggerReadOnly = true) : console.log("No Match");
 
             /** Auto populate Account Id */
 
             if (this.accountId) {
-
-                this.fetchContacts()
+                this.fetchContacts();
                 const createContactHolder = this.template.querySelector('.exclusivity-show[data-recid="createContactHolder"]');
 
                 if (createContactHolder) {
                     // Bugfix: Keep it hidden in case of Edit Mode
-                    let showNewContact = this.recordId ? newContactVisibility['Edit'] : newContactVisibility['New']
-                    this.accountId && showNewContact ? createContactHolder.classList.remove('slds-hide') : createContactHolder.classList.add('slds-hide')
+                    let showNewContact = this.recordId ? newContactVisibility["Edit"] : newContactVisibility["New"];
+                    this.accountId && showNewContact ? createContactHolder.classList.remove("slds-hide") : createContactHolder.classList.add("slds-hide");
                 }
             }
         }
 
         //Bugfix - Closed status validation to auto apply on load with Closed Status
-        triggerClosedStatusValidation ? this.handleCaseCloseValidation(true) : console.log('No Update to Validation')
+        triggerClosedStatusValidation ? this.handleCaseCloseValidation(true) : console.log("No Update to Validation");
     }
 
     /** This method overides disabled/readonly for System Administrators to make changes */
 
     overrideAdminVisibility() {
-
-        if (this.userProfileName == 'System Administrator') {
-            let allFields = this.template.querySelectorAll("lightning-input-field")
-            allFields.forEach(fieldX => {
-                fieldX.disabled = false
-            })
-            this.overrideFlag = true
+        if (this.userProfileName == "System Administrator") {
+            let allFields = this.template.querySelectorAll("lightning-input-field");
+            allFields.forEach((fieldX) => {
+                fieldX.disabled = false;
+            });
+            this.overrideFlag = true;
         }
     }
 
     /** Method implemented to make all fields read only */
 
     makeCaseReadOnly() {
-
-        let allFields = this.template.querySelectorAll("lightning-input-field")
-        allFields.forEach(fieldX => {
-            fieldX.disabled = true
-        })
+        let allFields = this.template.querySelectorAll("lightning-input-field");
+        allFields.forEach((fieldX) => {
+            fieldX.disabled = true;
+        });
         this.isReadOnly = true;
     }
 
@@ -287,55 +293,54 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      */
 
     fieldChangeHandler(event) {
-
-        if (event.target.fieldName == 'Status' && event.target.value != 'Closed' && this.customStatusResetRequiredValidationFlag) {
-            this.handleCaseCloseValidation(false)
+        if (event.target.fieldName == "Status" && event.target.value != "Closed" && this.customStatusResetRequiredValidationFlag) {
+            this.handleCaseCloseValidation(false);
         }
 
         // Check if onChange is defined in value change mapper static data structure
         if (this.finalValueChangeMapper[event.target.fieldName]) {
-            this.initialLoadStatus = true // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
+            this.initialLoadStatus = true; // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
             if (this.recordsData == undefined || this.recordsData[event.target.fieldName] == undefined) {
-                this.recordsData = { ...this.recordsData, [event.target.fieldName]: event.target.value }
+                this.recordsData = { ...this.recordsData, [event.target.fieldName]: event.target.value };
             }
             if (this.recordsData) {
                 // Deep copy the data
-                this.previousPicklistValue = JSON.parse(JSON.stringify(this.recordsData[event.target.fieldName]))
-                this.currentPicklistValue = event.target.value // Bugfix: Added checkbox support detail -> target
-
+                this.previousPicklistValue = JSON.parse(JSON.stringify(this.recordsData[event.target.fieldName]));
+                this.currentPicklistValue = event.target.value; // Bugfix: Added checkbox support detail -> target
             } else {
-                this.previousPicklistValue = this.currentPicklistValue
-                this.currentPicklistValue = event.target.value // Bugfix: Added checkbox support detail -> target 
+                this.previousPicklistValue = this.currentPicklistValue;
+                this.currentPicklistValue = event.target.value; // Bugfix: Added checkbox support detail -> target
             }
 
-            this.recordsData[event.target.fieldName] = event.target.value // Bugfix: Added checkbox support detail -> target
+            this.recordsData[event.target.fieldName] = event.target.value; // Bugfix: Added checkbox support detail -> target
             // Fields to Add
-            const fieldsData = this.finalValueChangeMapper[event.target.fieldName][0][this.currentPicklistValue]
+            const fieldsData = this.finalValueChangeMapper[event.target.fieldName][0][this.currentPicklistValue];
             // Fields to Remove
-            const fieldsDataToRemove = this.finalValueChangeMapper[event.target.fieldName][0][this.previousPicklistValue]
+            const fieldsDataToRemove = this.finalValueChangeMapper[event.target.fieldName][0][this.previousPicklistValue];
 
             // Add & Remove Fields Logic Begin
-            this.sectionIndex = this.sectionIndexMapper[event.target.fieldName]
-            this.previousPicklistValue != this.currentPicklistValue && fieldsDataToRemove != undefined && fieldsDataToRemove != null ? this.removeFields(this.sections[this.sectionIndex].columns[1], fieldsDataToRemove) : console.log('No Data to Remove')
-            fieldsData != undefined && fieldsData != null ? this.addFieldsToColumn(this.sections[this.sectionIndex].columns[1], fieldsData) : console.log('No Data to Add')
+            this.sectionIndex = this.sectionIndexMapper[event.target.fieldName];
+            this.previousPicklistValue != this.currentPicklistValue && fieldsDataToRemove != undefined && fieldsDataToRemove != null
+                ? this.removeFields(this.sections[this.sectionIndex].columns[1], fieldsDataToRemove)
+                : console.log("No Data to Remove");
+            fieldsData != undefined && fieldsData != null ? this.addFieldsToColumn(this.sections[this.sectionIndex].columns[1], fieldsData) : console.log("No Data to Add");
             // Add & Remove Fields Logic End
 
-            /** Below logic is conditional and need to be implemented as per requirements 
-             * API Name == <<Required API Name>> && Its Field Value on UI == <<Required Value>> ? Show : Hide [Required Section Key] 
-             * 
+            /** Below logic is conditional and need to be implemented as per requirements
+             * API Name == <<Required API Name>> && Its Field Value on UI == <<Required Value>> ? Show : Hide [Required Section Key]
+             *
              * Example: Origin is API Name and Web is Value
-             * 
-            */
+             *
+             */
 
             const fieldName = event.target.fieldName;
             const fieldValue = event.target.value;
 
             if (sectionVisibilityConfig[fieldName]) {
-
                 const configs = sectionVisibilityConfig[fieldName][fieldValue] || sectionVisibilityConfig[fieldName].default;
 
                 if (configs) {
-                    configs.forEach(config => {
+                    configs.forEach((config) => {
                         this.handleSectionVisibility(config.section, config.action);
                     });
                 } else {
@@ -346,12 +351,12 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
             /** This Method will override Required property for System Admin and make all fields on form as Editable even if onchange handler brings read only */
 
-            this.overrideAdminVisibility()
+            this.overrideAdminVisibility();
         }
 
         /** Custom Validaton */
-        if (event.target.fieldName == 'Status' && event.target.value == 'Closed') {
-            this.handleCaseCloseValidation(true)
+        if (event.target.fieldName == "Status" && event.target.value == "Closed") {
+            this.handleCaseCloseValidation(true);
         }
     }
 
@@ -360,16 +365,15 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         // Looping over the key-value pairs in the object
         Object.entries(this.customStatusRequiredValidation).forEach(([status, fields]) => {
             // Split the comma-separated values into an array
-            const fieldsArray = fields.split(',');
+            const fieldsArray = fields.split(",");
             // Loop through each field
-            fieldsArray.forEach(field => {
-
+            fieldsArray.forEach((field) => {
                 console.log(`Required Field: ${field.trim()}`);
                 // Manipulate DOM Conditionally using Data Id Attributes
                 const element = this.template.querySelector(`[data-name="${field.trim()}"]`);
 
                 if (element) {
-                    element.required = flag
+                    element.required = flag;
                     this.customStatusResetRequiredValidationFlag = flag;
                 }
             });
@@ -379,32 +383,29 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** This method finds the Section from UI via Class Selector and appends and removes slds-hide class */
 
     handleSectionVisibility(key, mode) {
-
-        this.elemKey = '.exclusivity-hide[data-recid=' + key + ']'
+        this.elemKey = ".exclusivity-hide[data-recid=" + key + "]";
         const section = this.template.querySelector(this.elemKey);
 
         if (section) {
-            mode == 'Hide' ? section.classList.add('slds-hide') : mode == 'Show' ? section.classList.remove('slds-hide') : console.log('Invalid Mode')
+            mode == "Hide" ? section.classList.add("slds-hide") : mode == "Show" ? section.classList.remove("slds-hide") : console.log("Invalid Mode");
         }
     }
 
     // Method to remove fields from a column
     removeFields(column, fieldsToRemove) {
-
-        column.fields = column.fields.filter(field => {
+        column.fields = column.fields.filter((field) => {
             // Check if the field should be kept (not in fieldsToRemove)
-            return !fieldsToRemove.some(removeField => removeField.apiName === field.apiName)
+            return !fieldsToRemove.some((removeField) => removeField.apiName === field.apiName);
         });
     }
 
     /** This method is used to push conditional fields on UI based on On Change field handler */
 
     addFieldsToColumn(column, fields) {
-
-        fields.forEach(field => {
+        fields.forEach((field) => {
             // Check if the field already exists
-            if (!column.fields.some(existingField => existingField.apiName === field.apiName)) {
-                column.fields.push(field)
+            if (!column.fields.some((existingField) => existingField.apiName === field.apiName)) {
+                column.fields.push(field);
             }
         });
     }
@@ -414,15 +415,14 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** Edit Icon button to provide support for flexi pages - can be deprecated */
 
     async editHandler() {
-
-        if (this.userProfileName == 'System Administrator') {
-            this.isReadOnly = false
-            this.overrideAdminVisibility()
+        if (this.userProfileName == "System Administrator") {
+            this.isReadOnly = false;
+            this.overrideAdminVisibility();
         } else {
             await LightningAlert.open({
-                message: 'You don\'t have permission to edit closed cases. Please contact System Administrator',
-                theme: 'error', // a red theme intended for error states
-                label: 'Error!', // this is the header text
+                message: "You don't have permission to edit closed cases. Please contact System Administrator",
+                theme: "error", // a red theme intended for error states
+                label: "Error!" // this is the header text
             });
             //Alert has been closed
         }
@@ -431,42 +431,41 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** This is used to fetch the contact record type id and name defined in field mapper */
 
     fetchRecordTypes() {
-
-        getRecordTypeByName({ recordTypeName: this.defaultContactRecordType })
-            .then(result => {
-                this.selectedRecordTypeId = result[0] ? result[0].Id : null
-                this.selectedRecordTypeName = result[0] ? result[0].Name : null
-            })
+        getRecordTypeByName({ recordTypeName: this.defaultContactRecordType }).then((result) => {
+            this.selectedRecordTypeId = result[0] ? result[0].Id : null;
+            this.selectedRecordTypeName = result[0] ? result[0].Name : null;
+        });
     }
 
     /** Distribute fields in Contact creation left columns */
 
     get leftColumnFields() {
-        return this.distributeFields().left
+        return this.distributeFields().left;
     }
 
     /** Distribute fields in Contact creation right columns */
 
     get rightColumnFields() {
-        return this.distributeFields().right
+        return this.distributeFields().right;
     }
 
     /** Method implemented to evenly distribute fields in left and right 2 column layout for contact */
 
     distributeFields() {
-
-        const fields = fieldMapperContact.default
-        const left = []
-        const right = []
+        const fields = fieldMapperContact.default;
+        const left = [];
+        const right = [];
         fields.forEach((field, index) => {
             if (index % 2 === 0) {
-                left.push(field)
+                left.push(field);
             } else {
-                right.push(field)
+                right.push(field);
             }
         });
+
         const cleanLeft = left.filter((field) => Object.keys(field).length > 0);
         const cleanRight = right.filter((field) => Object.keys(field).length > 0);
+
         return { left: cleanLeft, right: cleanRight };
     }
 
@@ -476,12 +475,11 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      */
 
     handleFieldChange(event) {
-
-        if (event.target.fieldName === 'AccountId') {
+        if (event.target.fieldName === "AccountId") {
             this.handleAccountChange(event);
         }
-        if (event.target.label === 'Contact') {
-            this.handleContactChange(event)
+        if (event.target.label === "Contact") {
+            this.handleContactChange(event);
         }
         // Add other field-specific handlers if needed
     }
@@ -489,124 +487,120 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** Account Chnage Handler */
 
     handleAccountChange(event) {
-
-        this.accountId = event.target.value
-        this.contactId = null // Reset selected contact when changing account
-        this.fetchContacts()
+        this.accountId = event.target.value;
+        this.contactId = null; // Reset selected contact when changing account
+        this.fetchContacts();
         const createContactHolder = this.template.querySelector('.exclusivity-show[data-recid="createContactHolder"]');
         if (createContactHolder) {
             // Bugfix: Keep it hidden in case of Edit Mode
-            let showNewContact = this.recordId ? newContactVisibility['Edit'] : newContactVisibility['New']
-            this.accountId && showNewContact ? createContactHolder.classList.remove('slds-hide') : createContactHolder.classList.add('slds-hide')
+            let showNewContact = this.recordId ? newContactVisibility["Edit"] : newContactVisibility["New"];
+            this.accountId && showNewContact ? createContactHolder.classList.remove("slds-hide") : createContactHolder.classList.add("slds-hide");
         }
     }
 
     /** this will fetch contacts by making a server call on Account Contact Relationship with Active true */
 
     fetchContacts() {
-
-        this.contactOptions = []
+        this.contactOptions = [];
 
         if (this.accountId) {
-
             getContacts({ accountId: this.accountId })
-                .then(result => {
-                    this.contactOptions = result.map(contact => ({
+                .then((result) => {
+                    this.contactOptions = result.map((contact) => ({
                         label: contact.Name,
                         value: contact.Id
                     }));
                 })
-                .catch(error => {
-                    this.showErrorToast(error.body.message)
+                .catch((error) => {
+                    this.showErrorToast(error.body.message);
                 });
         } else {
-            this.contactOptions = [] // Clear contact options if no account selected
+            this.contactOptions = []; // Clear contact options if no account selected
         }
     }
 
     /** contact change handler */
 
     handleContactChange(event) {
-        this.contactId = event.detail.value
+        this.contactId = event.detail.value;
     }
 
     /** method implemented to open contact creation modal - reactivity on UI */
 
     handleNewContactClick() {
-        this.isModalOpen = true // Open the modal when clicking the "+" icon
+        this.isModalOpen = true; // Open the modal when clicking the "+" icon
     }
 
     /** method implemented to close the modal opened on UI for contact success */
 
     closeModal() {
-        this.isModalOpen = false
+        this.isModalOpen = false;
     }
 
     /** Lightning record edit form submit handler to show laoders and submits the form */
 
     @api
     handleFormSubmit(event) {
-        console.log('submitting form');
-        event.preventDefault()
-        this.isLoading = true
-        const fields = event.detail.fields
+        console.log("submitting form");
+        event.preventDefault();
+        this.isLoading = true;
+        const fields = event.detail.fields;
         // Submit logic (e.g., saving the record)
-        this.template.querySelector('lightning-record-edit-form').submit(fields)
+        this.template.querySelector("lightning-record-edit-form").submit(fields);
     }
 
     /** Method called when contact is submitted and enable loader and form will be submitted automatically */
 
     handleContactFormSubmit(event) {
-        this.isContactLoading = true
+        this.isContactLoading = true;
     }
 
     /** success form submit handler */
 
     @api
     handleSuccess(event) {
-
-        this.isLoading = false // Stop loader if form has errors
-        this.isContactLoading = false
-        const caseId = event.detail.id
-        const successMessage = this.recordId ? 'Case updated successfully' : 'Case created successfully'
-        this.dispatchEvent(new ShowToastEvent({
-            title: 'Success',
-            message: successMessage,
-            variant: 'success'
-        }));
+        this.isLoading = false; // Stop loader if form has errors
+        this.isContactLoading = false;
+        const caseId = event.detail.id;
+        const successMessage = this.recordId ? "Case updated successfully" : "Case created successfully";
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: "Success",
+                message: successMessage,
+                variant: "success"
+            })
+        );
         this.isModalOpen = false;
-        const successEvent = new CustomEvent('submitsuccess', {
+        const successEvent = new CustomEvent("submitsuccess", {
             bubbles: true,
             composed: true,
             detail: caseId
         });
-        this.navigateToRecord(caseId)
+        this.navigateToRecord(caseId);
     }
 
     /**
-     * 
+     *
      * @param {*} event
      * Handling the Cancel button on the form
      */
 
     @api
     handleCaseCancel(event) {
-
         /** For Edit Mode Cancel button will behave exactly same as Success Button in Navigation */
 
         if (this.recordId) {
-
-            const caseId = this.recordId
+            const caseId = this.recordId;
             this.isModalOpen = false;
-            const successEvent = new CustomEvent('submitsuccess', {
+            const successEvent = new CustomEvent("submitsuccess", {
                 bubbles: true,
                 composed: true,
                 detail: caseId
             });
-            this.navigateToRecord(caseId)
+            this.navigateToRecord(caseId);
         } else {
             /** This is for New Mode */
-            const cancelEvent = new CustomEvent('submitcancel', {
+            const cancelEvent = new CustomEvent("submitcancel", {
                 bubbles: true,
                 composed: true,
                 detail: this.recordId // undefined
@@ -615,32 +609,32 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
 
             /** Hanlde Navigation */
 
-            this.navigateToRecord(this.recordId)
+            this.navigateToRecord(this.recordId);
         }
     }
 
     /** error form submit handler */
 
     async handleFormError(event) {
+        this.isLoading = false; // Stop loader if form has errors
+        this.isContactLoading = false;
 
-        this.isLoading = false // Stop loader if form has errors
-        this.isContactLoading = false
-
-        let message = 'An error occurred while saving the record. Please try again later.';
+        let message = "An error occurred while saving the record. Please try again later.";
 
         if (event.detail && event.detail.output && event.detail.output.errors && event.detail.output.errors.length > 0) {
-            message = event.detail.output.errors.map(error => error.message).join(', ');
+            message = event.detail.output.errors.map((error) => error.message).join(", ");
         } else if (event.detail && event.detail.output && event.detail.output.fieldErrors) {
-
-            message = Object.values(event.detail.output.fieldErrors).map(fieldErrorArray => {
-                return fieldErrorArray.map(error => error.message).join(', ');
-            }).join(', ');
+            message = Object.values(event.detail.output.fieldErrors)
+                .map((fieldErrorArray) => {
+                    return fieldErrorArray.map((error) => error.message).join(", ");
+                })
+                .join(", ");
         }
 
         await LightningAlert.open({
             message: message,
-            theme: 'error', // a red theme intended for error states
-            label: 'An Error Occurred! Please try again.', // this is the header text
+            theme: "error", // a red theme intended for error states
+            label: "An Error Occurred! Please try again." // this is the header text
         });
         //Alert has been closed
     }
@@ -648,62 +642,63 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** comtact creation success handler */
 
     async handleContactSuccess(event) {
-
-        let contactRecordCreated = event.detail.id
-        this.isContactLoading = false
-        this.showSuccessToast('Contact created successfully')
-        this.closeModal()
-        await this.fetchContacts() // Refresh contacts after new contact creation
+        let contactRecordCreated = event.detail.id;
+        this.isContactLoading = false;
+        this.showSuccessToast("Contact created successfully");
+        this.closeModal();
+        await this.fetchContacts(); // Refresh contacts after new contact creation
         // New Change to Auto Populate the newly inserted contact field here
-        this.contactId = contactRecordCreated
+        this.contactId = contactRecordCreated;
     }
 
     /** Cancel button handler for contact modal */
 
     handleContactCancel(event) {
-        this.isContactLoading = false
-        this.closeModal()
+        this.isContactLoading = false;
+        this.closeModal();
     }
 
     /** Error toast method */
 
     handleError(event) {
-        this.showErrorToast(event.detail.message)
+        this.showErrorToast(event.detail.message);
     }
 
     /** Success Toast message */
 
     showSuccessToast(message) {
-
-        this.dispatchEvent(new ShowToastEvent({
-            title: 'Success',
-            message: message,
-            variant: 'success'
-        }));
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: "Success",
+                message: message,
+                variant: "success"
+            })
+        );
     }
 
     /** Eror Toast method */
 
     showErrorToast(message) {
-
-        this.dispatchEvent(new ShowToastEvent({
-            title: 'Error',
-            message: message,
-            variant: 'error'
-        }));
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: "Error",
+                message: message,
+                variant: "error"
+            })
+        );
     }
 
     /** Navigation handler */
 
     navigateToRecord(recordId) {
-        console.log('Navigating method ' + this.isConsoleNavigation)
+        console.log("Navigating method " + this.isConsoleNavigation);
         if (this.isConsoleNavigation) {
             this.closeTabSubtabsAndNavigate(recordId);
         }
     }
 
     /**
-     * 
+     *
      * @param {*} recordId
      * This method handles the console navigation by closing the tabs or subtabs and navigating to the record.
      * ProjectX - Version 1.0
@@ -713,61 +708,69 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      */
 
     async closeTabSubtabsAndNavigate(recordId) {
+        const tabInfo = await getFocusedTabInfo();
 
-        const tabInfo = await getFocusedTabInfo()
-
-        console.log('tabInfo ' + JSON.stringify(tabInfo))
+        console.log("tabInfo " + JSON.stringify(tabInfo));
 
         if (recordId) {
-
             /** New Case Success Block with Record Id */
 
-            if (tabInfo.title.includes('New')) {
-
+            if (tabInfo.title.includes("New")) {
                 /** Navigate to Newly created case */
-                this.navigateToCaseRecord(recordId)
-                await closeTab(tabInfo.tabId)
+                this.navigateToCaseRecord(recordId);
+                await closeTab(tabInfo.tabId);
             }
 
-            if (tabInfo.title.includes('Edit')) {
-
-                await closeTab(tabInfo.tabId)
-
+            if (tabInfo.title.includes("Edit")) {
+                await closeTab(tabInfo.tabId);
             } else {
                 // Check if Sub Tabs are open
                 if (tabInfo.subtabs) {
-
-                    tabInfo.subtabs.forEach(async tab => {
-
-                        if (tab.title.includes('Edit') || tab.title.includes('New Case')) {
-
-                            await closeTab(tab.tabId)
+                    tabInfo.subtabs.forEach(async (tab) => {
+                        if (tab.title.includes("Edit") || tab.title.includes("New Case")) {
+                            await closeTab(tab.tabId);
                         }
-                    })
+                    });
                 }
             }
         } else {
+            console.log("Cancel Action  " + tabInfo.title);
 
-            console.log('Cancel Action  ' + tabInfo.title)
-
-            if (tabInfo.title.includes('New')) {
-
-                await closeTab(tabInfo.tabId)
+            if (tabInfo.title.includes("New")) {
+                await closeTab(tabInfo.tabId);
             }
         }
     }
 
     /** This method is for Navigating to newly created Case using Navigation Mixing module */
     navigateToCaseRecord(recordId) {
-
         // Navigate to the Account home page
         this[NavigationMixin.Navigate]({
-            type: 'standard__recordPage',
+            type: "standard__recordPage",
             attributes: {
                 recordId: recordId,
-                objectApiName: 'Case',
-                actionName: 'view'
+                objectApiName: "Case",
+                actionName: "view"
             }
         });
+    }
+    /**
+     *
+     * @param {*} event
+     * Description: This method captures and process data from Custom Phone Picker
+     */
+    handleCustomPhone(event) {
+        const fullPhoneNumber = event.detail.fullPhoneNumber;
+        const inputElement = event.detail.inputElement;
+        //HomePhone OtherPhone Preferred_Phone__c
+        if (inputElement == "Home Phone") {
+            this.homePhone = fullPhoneNumber;
+        }
+        if (inputElement == "Other Phone") {
+            this.otherPhone = fullPhoneNumber;
+        }
+        if (inputElement == "Preferred Phone") {
+            this.preferredPhone = fullPhoneNumber;
+        }
     }
 }
