@@ -1,0 +1,21 @@
+<!--
+  @description       : 
+  @author            : 
+  @group             : 
+  @last modified on  : 12-13-2024
+  @last modified by  : 
+-->
+<template>
+    <lightning-card title={title} icon-name="standard:task">
+        <div class="slds-m-around_medium">
+            <lightning-datatable
+                key-field="id"
+                data={items}
+                columns={columns}
+                is-loading={isLoading}
+                hide-checkbox-column="true"
+                onsort={handleSort}
+            ></lightning-datatable>
+        </div>
+    </lightning-card>
+</template>
