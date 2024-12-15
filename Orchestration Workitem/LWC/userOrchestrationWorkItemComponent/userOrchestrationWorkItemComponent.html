@@ -1,21 +1,183 @@
 <!--
   @description       : 
-  @author            : 
+  @author            : Kuldeep Singh
   @group             : 
-  @last modified on  : 12-13-2024
-  @last modified by  : 
+  @last modified on  : 12-15-2024
+  @last modified by  : Kuldeep Singh
 -->
 <template>
-    <lightning-card title={title} icon-name="standard:task">
-        <div class="slds-m-around_medium">
-            <lightning-datatable
-                key-field="id"
-                data={items}
-                columns={columns}
-                is-loading={isLoading}
-                hide-checkbox-column="true"
-                onsort={handleSort}
-            ></lightning-datatable>
+    <!-- Wrap everything in a white background -->
+    <div
+        class="slds-box slds-theme_default slds-p-around_none"
+        style="position: relative"
+    >
+        <!-- Layout for the title and refresh button -->
+        <lightning-layout vertical-align="center" class="slds-p-around_small">
+            <lightning-layout-item size="5" class="slds-align-left">
+                <div class="list-view-container">
+                    <lightning-icon
+                        icon-name="standard:task"
+                        size="medium"
+                        alternative-text="Task Icon"
+                        class="icon-style"
+                    ></lightning-icon>
+                    <div class="text-container">
+                        <span
+                            class="slds-text-heading_xxx-small slds-text-color_default"
+                        >
+                            Orchestration Work Items
+                        </span>
+                        <strong class="slds-text-color_weak">{title}</strong>
+                    </div>
+                </div>
+                <!-- Show loader while refreshing -->
+                <template if:true={loading}>
+                    <lightning-spinner
+                        alternative-text="Loading"
+                        size="small"
+                        class="slds-m-left_small"
+                    ></lightning-spinner>
+                </template>
+            </lightning-layout-item>
+
+            <lightning-layout-item size="6" class="slds-align-right">
+                <!-- Search input field -->
+                <lightning-input
+                    type="search"
+                    label="Search"
+                    onchange={handleSearch}
+                    placeholder="Search this list..."
+                    class="slds-m-left_small small-input search-bar"
+                    variant="label-hidden"
+                    value={searchTerm}
+                >
+                </lightning-input>
+            </lightning-layout-item>
+
+            <lightning-layout-item size="1" class="slds-text-align_right">
+                <!-- Refresh button placed on the right side -->
+                <lightning-button-icon
+                    icon-name="utility:refresh"
+                    title="Refresh"
+                    alternative-text="Refresh"
+                    onclick={handleRefresh}
+                    variant="bare"
+                    class="slds-m-right_small"
+                    size="large"
+                >
+                </lightning-button-icon>
+            </lightning-layout-item>
+        </lightning-layout>
+        <div class="slds-grid slds-text-body_small slds-m-left_medium">
+            <span>{counterString} items</span> &nbsp;•&nbsp;
+            <span>Sorted by {sortCriteria}</span> &nbsp;•&nbsp;
+            <span>Filtered by {filterCriteria}</span> &nbsp;•&nbsp;
+            <span>{lastUpdated}</span>
         </div>
-    </lightning-card>
+        <!-- Actual Datatable renderning logic -->
+        <div class="slds-m-around_medium">
+            <template if:true={showTable}>
+                <lightning-datatable
+                    key-field="id"
+                    data={displayedItems}
+                    columns={columns}
+                    hide-checkbox-column="true"
+                    onsort={handleSort}
+                ></lightning-datatable>
+            </template>
+            <template if:false={showTable}>
+                <div class="slds-m-around_medium">
+                    <div class="slds-grid slds-grid_align-center">
+                        <img
+                            src="/orchestrator/images/emptyState.svg"
+                            aria-hidden="true"
+                            alt=""
+                        />
+                    </div>
+                    <p class="no-records-message">{noRecordsMessage}</p>
+                </div>
+            </template>
+        </div>
+        <div class="slds-m-around_medium">
+            <!-- Updated Pagination controls -->
+            <template if:true={showBar}>
+                <div
+                    style="
+                        background: rgb(243, 243, 243);
+                        height: 50px;
+                        margin-top: 2px;
+                    "
+                >
+                    <div
+                        class="slds-grid slds-m-around_medium slds-text-body_small"
+                        style="float: left"
+                    >
+                        {footerLeftLabel}
+                    </div>
+                    <div class="slds-grid" style="height: 4em; float: right">
+                        <button
+                            class="slds-button slds-button_icon icon_button"
+                            title="First"
+                            role="first"
+                            onclick={handleFirst}
+                            disabled={first}
+                        >
+                            <svg viewBox="0 0 1024 1024" class="icon">
+                                <g>
+                                    <path d="M1024 1024 256 512 1024 0Z" />
+                                    <path d="M0 128l256 0 0 768-256 0 0-768Z" />
+                                </g>
+                            </svg>
+                        </button>
+                        <button
+                            class="slds-button slds-button_icon icon_button"
+                            title="Previous"
+                            role="previous"
+                            onclick={handlePrevious}
+                            disabled={first}
+                        >
+                            <svg viewBox="0 0 1024 1024" class="icon">
+                                <g>
+                                    <path d="M1024 1024 256 512 1024 0Z" />
+                                </g>
+                            </svg>
+                        </button>
+                        <span class="vcenter currentpage">{currentPage}</span>
+                        <span class="vcenter" style="font-weight: 500"
+                            >&nbsp;/&nbsp;{totalPages}</span
+                        >
+                        <button
+                            class="slds-button slds-button_icon icon_button"
+                            title="Next"
+                            role="next"
+                            onclick={handleNext}
+                            disabled={last}
+                        >
+                            <svg viewBox="0 0 1024 1024" class="icon">
+                                <g>
+                                    <path d="M0 0 768 512 0 1024Z" />
+                                </g>
+                            </svg>
+                        </button>
+                        <button
+                            class="slds-button slds-button_icon icon_button"
+                            title="Last"
+                            role="last"
+                            onclick={handleLast}
+                            disabled={last}
+                        >
+                            <svg viewBox="0 0 1024 1024" class="icon">
+                                <g>
+                                    <path d="M0 0 768 512 0 1024Z" />
+                                    <path
+                                        d="M768 128l256 0 0 768-256 0 0-768Z"
+                                    />
+                                </g>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
 </template>

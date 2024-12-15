@@ -2,7 +2,7 @@
  * @description       : 
  * @author            : 
  * @group             : 
- * @last modified on  : 12-13-2024
+ * @last modified on  : 12-14-2024
  * @last modified by  : 
 **/
 public with sharing class UserOrchestrationWorkItemController {
@@ -10,7 +10,7 @@ public with sharing class UserOrchestrationWorkItemController {
     public UserOrchestrationWorkItemController() {
         System.debug('UserOrchestrationWorkItemController Initilized');
     }
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=false)
     public static List<FlowOrchestrationWorkItem> getMyItems() {
         
         Id currentUserId = UserInfo.getUserId();

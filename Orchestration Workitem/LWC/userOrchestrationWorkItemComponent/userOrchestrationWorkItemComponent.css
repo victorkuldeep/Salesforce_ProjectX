@@ -1,0 +1,84 @@
+.icon {
+    width: 1em;
+    height: 1em;
+    fill: rgb(116, 116, 116);
+}
+
+.icon_button {
+    width: 2em;
+    height: 2em;
+    margin: auto 5px auto 5px;
+}
+
+.vcenter {
+    margin: auto 5px auto 5px;
+}
+
+.currentpage {
+    font-weight: 500;
+    width: 30px;
+    border: rgb(116, 116, 116) 1px solid;
+    text-align: center;
+}
+
+.icon_button_disabled {
+    cursor: auto;
+}
+
+.icon_button_disabled .icon {
+    fill: #e5e5e5;
+}
+
+.small-input {
+    width: auto;
+    /* Set your desired width here */
+}
+
+.custom-text-1 {
+    font-family: sans-serif, Arial, Verdana;
+    /* Choose your preferred font */
+    font-weight: normal;
+    /* Change to 'normal', 'bold', or any specific weight */
+    font-style: normal;
+    /* Make the text italic/normal */
+    font-size: 12px;
+}
+
+.no-wrap {
+    white-space: nowrap;
+}
+
+.no-records-message {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: bolder;
+    color: #133955;
+    margin-top: 20px;
+    margin-bottom: 25px;
+}
+
+.list-view-container {
+    display: flex;
+    align-items: center;
+    /* Align icon and text at the top */
+    margin-bottom: 0.5rem;
+    /* Space between list items */
+}
+
+.icon-style {
+    margin-right: 0.5rem;
+    /* Space between the icon and text */
+    flex-shrink: 0;
+    /* Prevent icon from resizing */
+}
+
+.text-container {
+    display: flex;
+    flex-direction: column;
+    /* Stack the text */
+}
+
+.status-summary {
+    font-size: 12px;
+    color: #666;
+}
