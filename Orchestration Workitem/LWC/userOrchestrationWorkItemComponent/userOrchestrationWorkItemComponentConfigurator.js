@@ -54,3 +54,4 @@ export const columns = [
 export const sortCriteria = "Created Date";
 export const filterCriteria = "Assigned orchestration work items";
 export const lastUpdated = "Updated a few seconds ago";
+export const lastUpdatedMinute = "Updated a minute ago";

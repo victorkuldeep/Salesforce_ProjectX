@@ -10,7 +10,8 @@ import {
     columns,
     sortCriteria,
     filterCriteria,
-    lastUpdated
+    lastUpdated,
+    lastUpdatedMinute
 } from "./userOrchestrationWorkItemComponentConfigurator.js";
 export default class UserOrchestrationWorkItemComponent extends LightningElement {
     @track items = [];
@@ -38,9 +39,34 @@ export default class UserOrchestrationWorkItemComponent extends LightningElement
     sortCriteria = sortCriteria;
     filterCriteria = filterCriteria;
     lastUpdated = lastUpdated;
+    lastUpdatedTime;
+    intervalId;
 
     connectedCallback() {
         this.fetchItems();
+        this.lastUpdatedTime = new Date();
+        this.updateLastUpdatedMessage();
+        // Start the interval to update the message every minute
+        this.intervalId = setInterval(() => {
+            this.updateLastUpdatedMessage();
+        }, 60000); // 60,000 ms = 1 minute
+    }
+    disconnectedCallback() {
+        // Clear the interval when the component is destroyed
+        clearInterval(this.intervalId);
+    }
+
+    updateLastUpdatedMessage() {
+        const now = new Date();
+        const diffInMinutes = Math.floor((now - this.lastUpdatedTime) / 60000);
+
+        if (diffInMinutes === 0) {
+            this.lastUpdated = lastUpdated; // Default from Configurator JS
+        } else if (diffInMinutes === 1) {
+            this.lastUpdated = lastUpdatedMinute; // Default from Configurator JS
+        } else {
+            this.lastUpdated = `Updated ${diffInMinutes} minutes ago`;
+        }
     }
 
     fetchItems() {
@@ -108,6 +134,14 @@ export default class UserOrchestrationWorkItemComponent extends LightningElement
             searchBar.focus();
         }
         this.fetchItems();
+        this.lastUpdatedTime = new Date();
+        this.updateLastUpdatedMessage();
+        // Clear the interval when the component is destroyed
+        clearInterval(this.intervalId);
+        // Start the interval to update the message every minute
+        this.intervalId = setInterval(() => {
+            this.updateLastUpdatedMessage();
+        }, 60000); // 60,000 ms = 1 minute
     }
     handleSearch(event) {
         // Clear the previous timeout if the user is still typing
