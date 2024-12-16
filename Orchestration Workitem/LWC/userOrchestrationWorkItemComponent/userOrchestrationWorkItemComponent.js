@@ -138,6 +138,7 @@ export default class UserOrchestrationWorkItemComponent extends LightningElement
             searchBar.focus();
         }
         this.fetchItems();
+        this.sortCriteria = sortCriteria; // Resetting to default sort
         this.lastUpdatedTime = new Date();
         this.updateLastUpdatedMessage();
         // Clear the interval when the component is destroyed
