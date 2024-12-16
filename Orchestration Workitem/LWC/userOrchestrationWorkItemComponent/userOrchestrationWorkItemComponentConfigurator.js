@@ -23,7 +23,8 @@ export const columns = [
         typeAttributes: {
             label: { fieldName: "Name" },
             target: "_blank"
-        }
+        },
+        sortable: "true"
     },
     {
         label: "Assigned To",
@@ -32,7 +33,8 @@ export const columns = [
         typeAttributes: {
             label: { fieldName: "AssignedTo" },
             target: "_blank"
-        }
+        },
+        sortable: "true"
     },
     {
         label: "Context Record",
@@ -41,14 +43,16 @@ export const columns = [
         typeAttributes: {
             label: { fieldName: "ContextRecord" },
             target: "_blank"
-        }
+        },
+        sortable: "true"
     },
-    { label: "Step", fieldName: "Step", type: "text" },
-    { label: "Status", fieldName: "Status", type: "text" },
+    { label: "Step", fieldName: "Step", type: "text", sortable: "true" },
+    { label: "Status", fieldName: "Status", type: "text", sortable: "true" },
     {
         label: "Created Date",
         fieldName: "CreatedDate",
-        type: "date"
+        type: "date",
+        sortable: "true"
     }
 ];
 export const sortCriteria = "Created Date";

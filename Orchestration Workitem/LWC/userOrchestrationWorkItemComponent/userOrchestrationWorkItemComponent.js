@@ -42,6 +42,10 @@ export default class UserOrchestrationWorkItemComponent extends LightningElement
     lastUpdatedTime;
     intervalId;
 
+    // SORTING
+    @track sortBy;
+    @track sortDirection;
+
     connectedCallback() {
         this.fetchItems();
         this.lastUpdatedTime = new Date();
@@ -198,5 +202,32 @@ export default class UserOrchestrationWorkItemComponent extends LightningElement
     handleLast() {
         this.currentPage = this.totalPages;
         this.updateDisplayedItems();
+    }
+
+    // SORTING
+    handleSort(event) {
+        this.sortBy = event.detail.fieldName;
+        this.sortDirection = event.detail.sortDirection;
+        // Find the corresponding label for the fieldName
+        const column = this.columns.find(
+            (col) => col.fieldName === this.sortBy
+        );
+        this.sortCriteria = column ? column.label : this.sortBy;
+        this.sortData(event.detail.fieldName, event.detail.sortDirection);
+    }
+
+    sortData(fieldName, direction) {
+        let parseData = JSON.parse(JSON.stringify(this.filteredItems));
+        let keyValue = (a) => {
+            return a[fieldName];
+        };
+        let isReverse = direction === "asc" ? 1 : -1;
+        parseData.sort((x, y) => {
+            x = keyValue(x) ? keyValue(x) : "";
+            y = keyValue(y) ? keyValue(y) : "";
+            return isReverse * ((x > y) - (y > x));
+        });
+        this.filteredItems = parseData;
+        this.updateDisplayedItems(); // Update displayed files
     }
 }
