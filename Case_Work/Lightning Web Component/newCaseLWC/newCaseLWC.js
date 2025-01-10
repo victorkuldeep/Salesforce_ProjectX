@@ -25,6 +25,7 @@ import CONTACT_OBJECT from "@salesforce/schema/Contact";
 import ProfileName from "@salesforce/schema/User.Profile.Name"; //this scoped module imports the current user profile name
 import Id from "@salesforce/user/Id";
 import LightningAlert from "lightning/alert";
+import LightningConfirm from 'lightning/confirm';
 
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     @api recordId;
@@ -70,6 +71,8 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     newContactVisibility = newContactVisibility;
     customStatusRequiredValidation = customStatusRequiredValidation;
     customStatusResetRequiredValidationFlag = false;
+    toggleStatus = false
+    isAlertModalOpen = false
 
     homePhone;
     otherPhone;
@@ -224,6 +227,50 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 const fieldName = apiName;
                 const fieldValue = fieldsData[fieldName].value;
 
+                if (fieldName == 'Status') {
+                    //this.toggleStatus = false
+                    // Update renderCustomHtml where apiName is "Status"
+                    if (fieldValue == 'Awaiting External') {
+
+                        this.sections.forEach(section => {
+                            section.columns.forEach(column => {
+                                column.fields.forEach(field => {
+                                    if (field.apiName === 'Status') {
+                                        field.renderCustomHtml = true;
+                                    }
+                                });
+                            });
+                        });
+                    } else {
+                        this.sections.forEach(section => {
+                            section.columns.forEach(column => {
+                                column.fields.forEach(field => {
+                                    if (field.apiName === 'Status') {
+                                        field.renderCustomHtml = false;
+                                    }
+                                });
+                            });
+                        });
+                    }
+
+                }
+
+                if (fieldName == 'DisableReminderClose__c') {
+                    this.toggleStatus = fieldValue
+                    if (fieldValue) { // IF TRUE
+                        console.log('Overriding Required for Info Req')
+                        this.sections.forEach(section => {
+                            section.columns.forEach(column => {
+                                column.fields.forEach(field => {
+                                    if (field.apiName === 'Information_Requested__c') {
+                                        field.required = false;
+                                    }
+                                });
+                            });
+                        });
+                    }
+                }
+
                 if (sectionVisibilityConfig[fieldName]) {
                     const configs = sectionVisibilityConfig[fieldName][fieldValue] || sectionVisibilityConfig[fieldName].default;
                     if (configs) {
@@ -336,6 +383,33 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             const fieldName = event.target.fieldName;
             const fieldValue = event.target.value;
 
+            if (fieldName == 'Status') {
+                //this.toggleStatus = false
+                // Update renderCustomHtml where apiName is "Status"
+                if (fieldValue == 'Awaiting External') {
+                    this.sections.forEach(section => {
+                        section.columns.forEach(column => {
+                            column.fields.forEach(field => {
+                                if (field.apiName === 'Status') {
+                                    field.renderCustomHtml = true;
+                                }
+                            });
+                        });
+                    });
+                } else {
+                    this.sections.forEach(section => {
+                        section.columns.forEach(column => {
+                            column.fields.forEach(field => {
+                                if (field.apiName === 'Status') {
+                                    field.renderCustomHtml = false;
+                                }
+                            });
+                        });
+                    });
+                }
+
+            }
+
             if (sectionVisibilityConfig[fieldName]) {
                 const configs = sectionVisibilityConfig[fieldName][fieldValue] || sectionVisibilityConfig[fieldName].default;
 
@@ -348,7 +422,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 }
             }
             //Deprecated: event.target.fieldName == 'Origin' && event.target.value == 'Web' ? this.handleSectionVisibility('System_Information','Show') : event.target.fieldName == 'Origin' && event.target.value != 'Web' ? this.handleSectionVisibility('System_Information','Hide') : console.log('No Origin Changed')
-
             /** This Method will override Required property for System Admin and make all fields on form as Editable even if onchange handler brings read only */
 
             this.overrideAdminVisibility();
@@ -357,6 +430,53 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         /** Custom Validaton */
         if (event.target.fieldName == "Status" && event.target.value == "Closed") {
             this.handleCaseCloseValidation(true);
+        }
+    }
+
+    /** This method handles functinality related to Disable toggle on Awaiting External */
+    async changeToggle(event) {
+        this.toggleStatus = event.target.checked
+
+        if (this.toggleStatus == true) {
+            const result = await LightningConfirm.open({
+                message: 'Are you sure you want to disable the "Awaiting External Response" email. Please confirm  to disable all "Awaiting External Response" reminder emails, and prevent auto-closure of the Case',
+                variant: 'header',
+                label: 'Please Provide your Confirmation..!!',
+                theme: 'warning'
+            });
+            if (!result) {
+                this.toggleStatus = false
+                event.target.checked = false;
+                this.sections.forEach(section => {
+                    section.columns.forEach(column => {
+                        column.fields.forEach(field => {
+                            if (field.apiName === 'Information_Requested__c') {
+                                field.required = true;
+                            }
+                        });
+                    });
+                });
+            } else {
+                this.sections.forEach(section => {
+                    section.columns.forEach(column => {
+                        column.fields.forEach(field => {
+                            if (field.apiName === 'Information_Requested__c') {
+                                field.required = false;
+                            }
+                        });
+                    });
+                });
+            }
+        } else {
+            this.sections.forEach(section => {
+                section.columns.forEach(column => {
+                    column.fields.forEach(field => {
+                        if (field.apiName === 'Information_Requested__c') {
+                            field.required = true;
+                        }
+                    });
+                });
+            });
         }
     }
 

@@ -2,14 +2,23 @@
 @description       : 
 @author            : Kuldeep Singh
 @group             : 
-@last modified on  : 11-22-2024
+@last modified on  : 01-10-2025
 @last modified by  : Kuldeep Singh
 -->
 <template>
-    <div class="slds-scrollable_y" style="background-color: #ffffff; border: none; padding: 20px" tabindex="0">
+    <div
+        class="slds-scrollable_y"
+        style="background-color: #ffffff; border: none; padding: 20px"
+        tabindex="0"
+    >
         <!-- Header Content directly in LWC Begin-->
 
-        <div class="slds-align_absolute-center header-text" style="height: 0.5rem">{headerContent}</div>
+        <div
+            class="slds-align_absolute-center header-text"
+            style="height: 0.5rem"
+        >
+            {headerContent}
+        </div>
 
         <!-- Header Content directly in LWC End-->
         <div class="slds-clearfix">
@@ -18,10 +27,20 @@
                 <span class="italic-text">Required Information</span>
             </div>
         </div>
-        <lightning-record-edit-form object-api-name="Case" record-id={recordId} onsuccess={handleSuccess} onsubmit={handleFormSubmit} onload={handleOnLoad} onerror={handleFormError}>
+        <lightning-record-edit-form
+            object-api-name="Case"
+            record-id={recordId}
+            onsuccess={handleSuccess}
+            onsubmit={handleFormSubmit}
+            onload={handleOnLoad}
+            onerror={handleFormError}
+        >
             <!-- Show spinner when isLoading is true Begin-->
             <template if:true={isLoading}>
-                <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+                <lightning-spinner
+                    alternative-text="Loading"
+                    size="small"
+                ></lightning-spinner>
             </template>
             <!-- Show spinner when isLoading is true End -->
 
@@ -30,16 +49,45 @@
             <div class="slds-grid slds-wrap">
                 <!-- Left Column -->
                 <div class="slds-col slds-size_1-of-2">
-                    <lightning-input-field field-name="AccountId" value={accountId} required disabled={isReadOnly} onchange={handleFieldChange} variant="label-stacked"></lightning-input-field>
-                    <lightning-output-field field-name="OwnerId" variant="label-stacked"></lightning-output-field>
+                    <lightning-input-field
+                        field-name="AccountId"
+                        value={accountId}
+                        required
+                        disabled={isReadOnly}
+                        onchange={handleFieldChange}
+                        variant="label-stacked"
+                    ></lightning-input-field>
+                    <lightning-output-field
+                        field-name="OwnerId"
+                        variant="label-stacked"
+                    ></lightning-output-field>
                 </div>
                 <!-- Right Column -->
                 <div class="slds-col slds-size_1-of-2">
-                    <lightning-combobox label="Contact" value={contactId} options={contactOptions} onchange={handleFieldChange} disabled={isReadOnly} variant="label-stacked"></lightning-combobox>
+                    <lightning-combobox
+                        label="Contact"
+                        value={contactId}
+                        options={contactOptions}
+                        onchange={handleFieldChange}
+                        disabled={isReadOnly}
+                        variant="label-stacked"
+                    ></lightning-combobox>
                     <!-- Hidden input field to store the selected contact ID -->
-                    <lightning-input-field field-name="ContactId" value={contactId} class="slds-hide" disabled={isReadOnly}></lightning-input-field>
-                    <div class="slds-m-top_medium slds-hide exclusivity-show" data-recid="createContactHolder">
-                        <lightning-button label="New Contact" icon-name="utility:add" onclick={handleNewContactClick}></lightning-button>
+                    <lightning-input-field
+                        field-name="ContactId"
+                        value={contactId}
+                        class="slds-hide"
+                        disabled={isReadOnly}
+                    ></lightning-input-field>
+                    <div
+                        class="slds-m-top_medium slds-hide exclusivity-show"
+                        data-recid="createContactHolder"
+                    >
+                        <lightning-button
+                            label="New Contact"
+                            icon-name="utility:add"
+                            onclick={handleNewContactClick}
+                        ></lightning-button>
                     </div>
                 </div>
             </div>
@@ -48,14 +96,59 @@
 
             <!-- Dynamic Rendering of Form From Field Mapper Begin -->
             <template for:each={sections} for:item="section">
-                <div key={section.sectionName} class="slds-section exclusivity-hide" data-recid={section.sectionKey}>
-                    <h2 class="slds-section__title slds-p-left_medium">{section.sectionName}</h2>
+                <div
+                    key={section.sectionName}
+                    class="slds-section exclusivity-hide"
+                    data-recid={section.sectionKey}
+                >
+                    <h2 class="slds-section__title slds-p-left_medium">
+                        {section.sectionName}
+                    </h2>
                     <div class="slds-grid slds-wrap">
                         <template for:each={section.columns} for:item="column">
-                            <div key={column.key} class="slds-col slds-size_1-of-2">
-                                <template for:each={column.fields} for:item="field">
-                                    <lightning-input-field key={field.apiName} field-name={field.apiName} required={field.required} onchange={fieldChangeHandler} disabled={field.readOnly} data-name={field.apiName} variant="label-stacked">
+                            <div
+                                key={column.key}
+                                class="slds-col slds-size_1-of-2"
+                            >
+                                <template
+                                    for:each={column.fields}
+                                    for:item="field"
+                                >
+                                    <lightning-input-field
+                                        key={field.apiName}
+                                        field-name={field.apiName}
+                                        required={field.required}
+                                        onchange={fieldChangeHandler}
+                                        disabled={field.readOnly}
+                                        data-name={field.apiName}
+                                        variant="label-stacked"
+                                    >
                                     </lightning-input-field>
+
+                                    <template if:true={field.renderCustomHtml}>
+                                        <div
+                                            key={column.key}
+                                            class="slds-p-around_large"
+                                        >
+                                            <lightning-input
+                                                data-id="toggle1"
+                                                type="toggle"
+                                                label="Disable Reminder Emails &amp; Auto
+                                            Closure"
+                                                onchange={changeToggle}
+                                                checked={toggleStatus}
+                                                message-toggle-active=""
+                                                message-toggle-inactive=""
+                                            ></lightning-input>
+
+                                            <!-- Hidden field for DisableReminderClose__c -->
+                                            <lightning-input-field
+                                                field-name="DisableReminderClose__c"
+                                                value={toggleStatus}
+                                                class="slds-hide"
+                                            ></lightning-input-field>
+                                        </div>
+                                    </template>
                                 </template>
                             </div>
                         </template>
@@ -69,13 +162,31 @@
 
             <div class="slds-m-around_medium slds-grid slds-grid_align-end">
                 <template if:true={isReadOnly}>
-                    <lightning-button-icon icon-name="utility:edit" alternative-text="Edit" onmouseover={show} onclick={editHandler} class="slds-m-around_x-small"></lightning-button-icon>
+                    <lightning-button-icon
+                        icon-name="utility:edit"
+                        alternative-text="Edit"
+                        onmouseover={show}
+                        onclick={editHandler}
+                        class="slds-m-around_x-small"
+                    ></lightning-button-icon>
                 </template>
 
                 <template if:false={isReadOnly}>
                     <div class="slds-m-top_small slds-grid slds-grid_align-end">
-                        <lightning-button variant="neutral" type="button" label="Cancel" onclick={handleCaseCancel} class="slds-m-right_small"></lightning-button>
-                        <lightning-button variant="brand" type="submit" name="submit" label="Save" disabled={isReadOnly}></lightning-button>
+                        <lightning-button
+                            variant="neutral"
+                            type="button"
+                            label="Cancel"
+                            onclick={handleCaseCancel}
+                            class="slds-m-right_small"
+                        ></lightning-button>
+                        <lightning-button
+                            variant="brand"
+                            type="submit"
+                            name="submit"
+                            label="Save"
+                            disabled={isReadOnly}
+                        ></lightning-button>
                     </div>
                 </template>
             </div>
@@ -85,14 +196,28 @@
         <!-- Modal for New Contact -->
 
         <template if:true={isModalOpen}>
-            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+            <section
+                role="dialog"
+                tabindex="-1"
+                class="slds-modal slds-fade-in-open"
+            >
                 <div class="slds-modal__container">
                     <header class="slds-modal__header">
-                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
-                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                        <button
+                            class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title="Close"
+                            onclick={closeModal}
+                        >
+                            <lightning-icon
+                                icon-name="utility:close"
+                                alternative-text="close"
+                                size="small"
+                            ></lightning-icon>
                             <span class="slds-assistive-text">Close</span>
                         </button>
-                        <h2 class="slds-text-heading_medium">New Contact: {selectedRecordTypeName}</h2>
+                        <h2 class="slds-text-heading_medium">
+                            New Contact: {selectedRecordTypeName}
+                        </h2>
                     </header>
                     <div class="slds-modal__content slds-p-around_medium">
                         <!-- Step 1: Contact Creation Form -->
@@ -100,13 +225,18 @@
                             <div class="slds-float_right slds-p-bottom_small">
                                 <span class="required-indicator">*</span>
                                 &nbsp;=&nbsp;
-                                <span class="italic-text">Required Information</span>
+                                <span class="italic-text"
+                                    >Required Information</span
+                                >
                             </div>
                         </div>
                         <!-- Show spinner when isContactLoading is true Begin-->
                         <template if:true={isContactLoading}>
                             <div class="slds-m-around_medium">
-                                <lightning-spinner alternative-text="Loading" size="small"></lightning-spinner>
+                                <lightning-spinner
+                                    alternative-text="Loading"
+                                    size="small"
+                                ></lightning-spinner>
                             </div>
                         </template>
                         <!-- Show spinner when isContactLoading is true End -->
@@ -119,51 +249,124 @@
                             onsubmit={handleContactFormSubmit}
                             data-id="contactForm"
                         >
-                            <div class="slds-grid slds-gutters slds-m-around_xx-small">
+                            <div
+                                class="slds-grid slds-gutters slds-m-around_xx-small"
+                            >
                                 <div class="slds-col slds-size_1-of-2">
                                     <!-- LEFT COLUMNS RENDERING FROM CONFIGURATOR BEGIN -->
 
-                                    <template for:each={leftColumnFields} for:item="field">
-                                        <lightning-input-field key={field.fieldName} field-name={field.fieldName} required={field.required} disabled={field.disabled} variant="label-stacked"></lightning-input-field>
+                                    <template
+                                        for:each={leftColumnFields}
+                                        for:item="field"
+                                    >
+                                        <lightning-input-field
+                                            key={field.fieldName}
+                                            field-name={field.fieldName}
+                                            required={field.required}
+                                            disabled={field.disabled}
+                                            variant="label-stacked"
+                                        ></lightning-input-field>
                                     </template>
 
                                     <!-- LEFT COLUMNS RENDERING FROM CONFIGURATOR END -->
                                 </div>
                                 <div class="slds-col slds-size_1-of-2">
-                                    <c-custom-phone-picker input-elem="Home Phone" mandatory="true" default-country="in" onvaluechange={handleCustomPhone}></c-custom-phone-picker>
-                                    <c-custom-phone-picker input-elem="Other Phone" default-country="us" onvaluechange={handleCustomPhone}></c-custom-phone-picker>
-                                    <c-custom-phone-picker input-elem="Preferred Phone" default-country="gb" onvaluechange={handleCustomPhone}></c-custom-phone-picker>
+                                    <c-custom-phone-picker
+                                        input-elem="Home Phone"
+                                        mandatory="true"
+                                        default-country="in"
+                                        onvaluechange={handleCustomPhone}
+                                    ></c-custom-phone-picker>
+                                    <c-custom-phone-picker
+                                        input-elem="Other Phone"
+                                        default-country="us"
+                                        onvaluechange={handleCustomPhone}
+                                    ></c-custom-phone-picker>
+                                    <c-custom-phone-picker
+                                        input-elem="Preferred Phone"
+                                        default-country="gb"
+                                        onvaluechange={handleCustomPhone}
+                                    ></c-custom-phone-picker>
 
                                     <!-- RIGHT COLUMNS RENDERING FROM CONFIGURATOR BEGIN -->
 
-                                    <template for:each={rightColumnFields} for:item="field">
-                                        <lightning-input-field key={field.fieldName} field-name={field.fieldName} required={field.required} disabled={field.disabled} variant="label-stacked"></lightning-input-field>
+                                    <template
+                                        for:each={rightColumnFields}
+                                        for:item="field"
+                                    >
+                                        <lightning-input-field
+                                            key={field.fieldName}
+                                            field-name={field.fieldName}
+                                            required={field.required}
+                                            disabled={field.disabled}
+                                            variant="label-stacked"
+                                        ></lightning-input-field>
                                     </template>
 
                                     <!-- RIGHT COLUMNS RENDERING FROM CONFIGURATOR END -->
 
-                                    <lightning-input-field field-name="AccountId" value={accountId} disabled="true" variant="label-stacked"></lightning-input-field>
+                                    <lightning-input-field
+                                        field-name="AccountId"
+                                        value={accountId}
+                                        disabled="true"
+                                        variant="label-stacked"
+                                    ></lightning-input-field>
 
                                     <!-- Enter actual Phone Fields here that derives value from picker begin -->
                                     <div class="slds-hide">
-                                        <lightning-input-field field-name="HomePhone" value={homePhone} disabled="true" variant="label-stacked"></lightning-input-field>
-                                        <lightning-input-field field-name="OtherPhone" value={otherPhone} disabled="true" variant="label-stacked"></lightning-input-field>
-                                        <lightning-input-field field-name="Preferred_Phone__c" value={preferredPhone} disabled="true" variant="label-stacked"></lightning-input-field>
+                                        <lightning-input-field
+                                            field-name="HomePhone"
+                                            value={homePhone}
+                                            disabled="true"
+                                            variant="label-stacked"
+                                        ></lightning-input-field>
+                                        <lightning-input-field
+                                            field-name="OtherPhone"
+                                            value={otherPhone}
+                                            disabled="true"
+                                            variant="label-stacked"
+                                        ></lightning-input-field>
+                                        <lightning-input-field
+                                            field-name="Preferred_Phone__c"
+                                            value={preferredPhone}
+                                            disabled="true"
+                                            variant="label-stacked"
+                                        ></lightning-input-field>
                                     </div>
                                     <!-- Enter actual Phone Fields here that derives value from picker end -->
 
                                     <!-- Placeholder for dynamically created hidden fields Begin-->
                                     <template if:true={hiddenFieldsContact}>
-                                        <template for:each={hiddenFieldsContact} for:item="field">
-                                            <lightning-input-field key={field.fieldName} field-name={field.fieldName} value={field.value} class="slds-hide"></lightning-input-field>
+                                        <template
+                                            for:each={hiddenFieldsContact}
+                                            for:item="field"
+                                        >
+                                            <lightning-input-field
+                                                key={field.fieldName}
+                                                field-name={field.fieldName}
+                                                value={field.value}
+                                                class="slds-hide"
+                                            ></lightning-input-field>
                                         </template>
                                     </template>
                                     <!-- Placeholder for dynamically created hidden fields End-->
                                 </div>
                             </div>
-                            <div class="slds-m-top_small slds-grid slds-grid_align-end">
-                                <lightning-button variant="neutral" type="button" label="Cancel" onclick={handleContactCancel} class="slds-m-right_small"></lightning-button>
-                                <lightning-button variant="brand" label="Save" type="submit"></lightning-button>
+                            <div
+                                class="slds-m-top_small slds-grid slds-grid_align-end"
+                            >
+                                <lightning-button
+                                    variant="neutral"
+                                    type="button"
+                                    label="Cancel"
+                                    onclick={handleContactCancel}
+                                    class="slds-m-right_small"
+                                ></lightning-button>
+                                <lightning-button
+                                    variant="brand"
+                                    label="Save"
+                                    type="submit"
+                                ></lightning-button>
                             </div>
                         </lightning-record-edit-form>
                     </div>
