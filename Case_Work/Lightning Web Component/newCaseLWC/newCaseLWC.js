@@ -143,6 +143,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     /** LWC Lifecycle hook to run everytime once rendering is done on UI */
 
     renderedCallback() {
+
         /** Bugfix: Closed status not triggering readonly for DOM manipulated in between
          * This will refer updated DOM
          */
@@ -224,10 +225,12 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
              */
 
             Object.keys(fieldsData).forEach((apiName) => {
+
                 const fieldName = apiName;
                 const fieldValue = fieldsData[fieldName].value;
 
                 if (fieldName == 'Status') {
+
                     //this.toggleStatus = false
                     // Update renderCustomHtml where apiName is "Status"
                     if (fieldValue == 'Awaiting External') {
@@ -252,7 +255,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                             });
                         });
                     }
-
                 }
 
                 if (fieldName == 'DisableReminderClose__c') {
@@ -340,10 +342,10 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      */
 
     fieldChangeHandler(event) {
+
         if (event.target.fieldName == "Status" && event.target.value != "Closed" && this.customStatusResetRequiredValidationFlag) {
             this.handleCaseCloseValidation(false);
         }
-
         // Check if onChange is defined in value change mapper static data structure
         if (this.finalValueChangeMapper[event.target.fieldName]) {
             this.initialLoadStatus = true; // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
@@ -360,13 +362,14 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             }
 
             this.recordsData[event.target.fieldName] = event.target.value; // Bugfix: Added checkbox support detail -> target
+
             // Fields to Add
             const fieldsData = this.finalValueChangeMapper[event.target.fieldName][0][this.currentPicklistValue];
             // Fields to Remove
             const fieldsDataToRemove = this.finalValueChangeMapper[event.target.fieldName][0][this.previousPicklistValue];
-
             // Add & Remove Fields Logic Begin
             this.sectionIndex = this.sectionIndexMapper[event.target.fieldName];
+
             this.previousPicklistValue != this.currentPicklistValue && fieldsDataToRemove != undefined && fieldsDataToRemove != null
                 ? this.removeFields(this.sections[this.sectionIndex].columns[1], fieldsDataToRemove)
                 : console.log("No Data to Remove");
@@ -408,6 +411,27 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                     });
                 }
 
+                const fieldapi = 'Gift_Card_Service__c';
+                const targetElement = this.template.querySelector(`[data-name="${fieldapi.trim()}"]`);
+                if (targetElement) {
+                    targetElement.required = fieldValue == 'New' ? false : true;
+                }
+            }
+
+            if (fieldName == 'Department__c') {
+                const sourceFieldApi = 'Status';
+                const sourceElement = this.template.querySelector(`[data-name="${sourceFieldApi.trim()}"]`);
+                if (sourceElement) {
+                    this.sections.forEach(section => {
+                        section.columns.forEach(column => {
+                            column.fields.forEach(field => {
+                                if (field.apiName === 'Gift_Card_Service__c') {
+                                    field.required = sourceElement.value == 'New' ? false : true;
+                                }
+                            });
+                        });
+                    });
+                }
             }
 
             if (sectionVisibilityConfig[fieldName]) {
