@@ -1,0 +1,57 @@
+<!-- CaseNewRouter.cmp -->
+<aura:component
+    controller="CaseNewRouterController"
+    implements="lightning:isUrlAddressable"
+    access="global"
+>
+    <!-- Workspace API Component -->
+    <lightning:workspaceAPI aura:id="workspace" />
+
+    <!-- Attributes -->
+    <aura:attribute name="recordTypes" type="List" />
+    <aura:attribute name="selectedRecordType" type="String" />
+    <aura:attribute name="isLoading" type="Boolean" default="false" />
+
+    <!-- Initialization -->
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+    <!-- UI -->
+    <div class="custom-container">
+        <lightning:card title="New Case - Select Record Type">
+            <div class="slds-p-around_medium">
+                <div class="slds-form-element">
+                    <lightning:select
+                        name="recordTypeSelect"
+                        label="Record Type"
+                        aura:id="recordTypeSelect"
+                        onchange="{!c.handleRecordTypeChange}"
+                        required="true"
+                    >
+                        <option value="">-- Select Record Type --</option>
+                        <aura:iteration items="{!v.recordTypes}" var="rt">
+                            <option value="{!rt.value}" text="{!rt.label}" />
+                        </aura:iteration>
+                    </lightning:select>
+                </div>
+
+                <div class="slds-m-top_medium button-container">
+                    <lightning:button
+                        variant="brand"
+                        label="Continue"
+                        onclick="{!c.handleContinue}"
+                        disabled="{!v.selectedRecordType == ''}"
+                    />
+                    <lightning:button
+                        variant="neutral"
+                        label="Cancel"
+                        onclick="{!c.handleCancel}"
+                    />
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <aura:if isTrue="{!v.isLoading}">
+                <lightning:spinner alternativeText="Loading..." />
+            </aura:if>
+        </lightning:card>
+    </div>
+</aura:component>

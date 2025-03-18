@@ -1,0 +1,23 @@
+.THIS .custom-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.THIS .button-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.THIS .slds-card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.THIS .slds-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}

@@ -2,10 +2,9 @@ import { LightningElement, api, track, wire } from "lwc";
 import { IsConsoleNavigation, getFocusedTabInfo, closeTab } from "lightning/platformWorkspaceApi";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import { NavigationMixin } from "lightning/navigation";
-import { getRecord } from "lightning/uiRecordApi";
-import getContacts from "@salesforce/apex/CaseController.getContacts";
-import getRecordTypeByName from "@salesforce/apex/ContactController.getRecordTypeByName";
 import { getObjectInfo } from "lightning/uiObjectInfoApi";
+import { getRecord } from "lightning/uiRecordApi";
+import { getRecordCreateDefaults } from 'lightning/uiRecordApi';
 import {
     customStatusRequiredValidation,
     newContactVisibility,
@@ -19,34 +18,40 @@ import {
     fieldConfigEdit,
     acSection,
     sectionIndexMapper,
-    defaultContactRecordType
+    defaultContactRecordType,
+    defaultCaseRecordType
 } from "./fieldMapper";
+import getContacts from "@salesforce/apex/CaseController.getContacts";
+import getRecordTypeByName from "@salesforce/apex/ContactController.getRecordTypeByName";
 import CONTACT_OBJECT from "@salesforce/schema/Contact";
 import ProfileName from "@salesforce/schema/User.Profile.Name"; //this scoped module imports the current user profile name
 import Id from "@salesforce/user/Id";
 import LightningAlert from "lightning/alert";
 import LightningConfirm from 'lightning/confirm';
+import CASE_OBJECT from '@salesforce/schema/Case';
 
 export default class NewCaseLWC extends NavigationMixin(LightningElement) {
+    @api recordTypeId;
     @api recordId;
     @api headerContent;
     @api accountId;
     @api isReadOnly;
     @api objectApiName;
-    @track isLoading = false;
-    @track isContactLoading = false;
     @track contactOptions = [];
-    @track previousPicklistValue = "";
-    @track currentPicklistValue = "";
     @track recordsData;
     @track sections;
     @track userProfileName;
     @track hiddenFieldsContact = [];
+    @track caseSections;
+    isLoading = false;
+    isContactLoading = false;
     isLoadScript;
-    contactId;
     isModalOpen = false; // Ensure this property is defined
+    previousPicklistValue = "";
+    currentPicklistValue = "";
     selectedRecordTypeId;
     selectedRecordTypeName;
+    contactId;
     fieldConfig = fieldConfig;
     valueChangeMapper = valueChangeMapper;
     fieldConfigEdit = fieldConfigEdit;
@@ -71,15 +76,16 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     newContactVisibility = newContactVisibility;
     customStatusRequiredValidation = customStatusRequiredValidation;
     customStatusResetRequiredValidationFlag = false;
-    toggleStatus = false
+    toggleStatus = false;
     isAlertModalOpen = false
-
+    recordTypeName;
+    showCustomCaseComponent = false;
+    /** Phone Component Instant Variables */
     homePhone;
     otherPhone;
     preferredPhone;
 
     /** Wire Adapter to pull logged in user Profile */
-
     @wire(getRecord, { recordId: Id, fields: [ProfileName] })
     userDetails({ error, data }) {
         if (data && data.fields.Profile.value != null) {
@@ -87,17 +93,72 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         }
     }
 
+    /** Wire Adapter to pull Record Type Name */
+    @wire(getRecord, { recordId: '$recordTypeId', fields: ['RecordType.Name'] })
+    wiredRecordType({ error, data }) {
+        if (data) {
+            this.recordTypeName = data.fields.Name.value;
+            this.headerContent = this.recordTypeName && this.headerContent?.includes(this.recordTypeName)
+                ? this.headerContent
+                : `${this.headerContent}: ${this.recordTypeName}`;
+
+            if (this.recordTypeName === defaultCaseRecordType) {
+                this.showCustomCaseComponent = true;
+            } else {
+                this.showCustomCaseComponent = false;
+            }
+        } else if (error) {
+            console.error('Error fetching record type:', error);
+        }
+    }
+
+    /** Wire Adapter to pull Default Record Type */
+    @wire(getObjectInfo, { objectApiName: CASE_OBJECT })
+    wiredCaseObject({ data, error }) {
+        if (data) {
+            this.recordTypeId = !this.recordTypeId ? data.defaultRecordTypeId : this.recordTypeId; // Get default record type based on user profile
+        } else if (error) {
+            console.error('Error fetching record type:', error);
+        }
+    }
+    /** Wire Adapter to pull Page Layout */
+    @wire(getRecordCreateDefaults, { objectApiName: 'Case', recordTypeId: '$recordTypeId' })
+    wiredRecordCreateDefaults({ error, data }) {
+        if (data) {
+            // ✅ Flatten layout structure using map() and flatMap()
+            /** Filter Null API Names - These are coming from Layout on Empty Spaces */
+            this.caseSections = data.layout.sections.map(section => ({
+                sectionName: section.heading,
+                leftColumnFields: section.layoutRows
+                    .flatMap(row => row.layoutItems[0] ? this.flattenField(row.layoutItems[0]) : [])
+                    .filter(field => field.apiName && field.apiName.trim() !== ''), // ✅ Assign back,
+                rightColumnFields: section.layoutRows
+                    .flatMap(row => row.layoutItems[1] ? this.flattenField(row.layoutItems[1]) : [])
+                    .filter(field => field.apiName && field.apiName.trim() !== ''), // ✅ Assign back
+            }));
+        } else if (error) {
+            console.error('Failed to load layout:', error);
+        }
+    }
+
+    flattenField(item) { // ✅ Utility to flatten field data for direct template access
+        return item.layoutComponents.map(component => ({
+            apiName: component.apiName,
+            label: component.label,
+            required: item.required,
+            editableForNew: item.editableForNew,
+            editableForUpdate: item.editableForUpdate,
+            disabled: !item.editableForNew // ✅ Create a direct `disabled` property
+        }));
+    }
+
     /** Wire Adapter to check if we are Console Apps */
     @wire(IsConsoleNavigation)
     isConsoleNavigation;
-
     /** Wire Adapter to pull Contact Object information */
-
     @wire(getObjectInfo, { objectApiName: CONTACT_OBJECT })
     objectInfo;
-
     /** Wire Adapter to pre-populate combo box once we have record id in case of Edit Mode */
-
     @wire(getRecord, { recordId: "$recordId", fields: ["Case.AccountId", "Case.ContactId"] })
     wiredAccount({ error, data }) {
         if (data) {
@@ -116,13 +177,11 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      * Case record type will direct to default as per user profile - not handled like contact
      * Re-initilizes form from field mapper to invalidate the cache once New is clicked again - BUGFIX
      */
-
     connectedCallback() {
         this.finalFieldConfig = this.recordId ? fieldConfigEdit : fieldConfig;
         this.finalValueChangeMapper = this.recordId ? valueChangeMapperEdit : valueChangeMapper;
         // Fetch record types
         this.fetchRecordTypes();
-
         if (this.isReadOnly == undefined) {
             this.isReadOnly = true;
         }
@@ -141,9 +200,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** LWC Lifecycle hook to run everytime once rendering is done on UI */
-
     renderedCallback() {
-
         /** Bugfix: Closed status not triggering readonly for DOM manipulated in between
          * This will refer updated DOM
          */
@@ -154,8 +211,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     disconnectedCallback() {
-        // Clear the timeout if the component is destroyed before the delay
-        clearTimeout(this.delayTimeout);
+        clearTimeout(this.delayTimeout); // Clear the timeout if the component is destroyed before the delay
     }
 
     setHiddenFields() {
@@ -169,15 +225,12 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      * Default values will trigger auto rendering of conditional fields
      * BUGFIX: Rendering of auto - conditional fields in case of Edit mode
      */
-
     handleOnLoad(event) {
         let triggerClosedStatusValidation = false;
         const element = this.template.querySelector(`[data-name="Status"]`);
-
         if (element && element.value == "Closed") {
             this.handleCaseCloseValidation(true);
         }
-
         if (!this.userProfileName) {
             this.delayTimeout = setTimeout(() => {
                 if (!this.overrideFlag) {
@@ -185,9 +238,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 }
             }, 3000);
         }
-
         const fieldsData = this.recordId ? event.detail.records[this.recordId].fields : event.detail.record.fields;
-
         Object.keys(fieldsData).forEach((apiName) => {
             if (apiName == "Status") {
                 if (fieldsData[apiName].value == "Closed") {
@@ -195,7 +246,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 }
             }
         });
-
         // Execute logic once and avoid re-run on multiple on laods
         if (!this.initialLoadStatus) {
             // loop over all fields coming from field mapper and load additional fields as per conditional mapping during initial on load
@@ -203,38 +253,29 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 if (apiName == "Status") {
                     this.caseStatus = fieldsData[apiName].value;
                 }
-
                 if (this.finalValueChangeMapper[apiName]) {
                     this.sectionIndex = this.sectionIndexMapper[apiName];
                     this.recordsData = { ...this.recordsData, [apiName]: fieldsData[apiName].value };
-
                     if (fieldsData[apiName].value != null) {
                         const fieldsDataToAdd = this.finalValueChangeMapper[apiName][0][fieldsData[apiName].value];
                         fieldsDataToAdd ? this.addFieldsToColumn(this.sections[this.sectionIndex].columns[1], fieldsDataToAdd) : console.log(`No Mapping in onChangeMapper for Value ${fieldsData[apiName].value}`); //BUGFIX: If no valid mapping in fieldMapper then handle error
                     }
                 }
             });
-
             this.initialLoadStatus = false; // Bugfix - Auto Rendering for some fields stopped as form loads multiple times
-
             /** Below logic is conditional and need to be implemented as per requirements
-             * <<API>> Name Value on UI == <<Required Value>> ? Show : Hide [Required Section Key]
-             *
-             * Example: Origin is API Name and Web is Value
-             *
-             */
-
+            * <<API>> Name Value on UI == <<Required Value>> ? Show : Hide [Required Section Key]
+            *
+            * Example: Origin is API Name and Web is Value
+            *
+            */
             Object.keys(fieldsData).forEach((apiName) => {
-
                 const fieldName = apiName;
                 const fieldValue = fieldsData[fieldName].value;
-
                 if (fieldName == 'Status') {
-
                     //this.toggleStatus = false
                     // Update renderCustomHtml where apiName is "Status"
                     if (fieldValue == 'Awaiting External') {
-
                         this.sections.forEach(section => {
                             section.columns.forEach(column => {
                                 column.fields.forEach(field => {
@@ -255,8 +296,28 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                             });
                         });
                     }
+                    const fieldapi = 'Gift_Card_Service__c';
+                    const targetElement = this.template.querySelector(`[data-name="${fieldapi.trim()}"]`);
+                    if (targetElement) {
+                        targetElement.required = fieldValue == 'New' ? false : true;
+                    }
                 }
-
+                if (fieldName == 'Department__c') {
+                    const sourceFieldApi = 'Status';
+                    const sourceElement = this.template.querySelector(`[data-name="${sourceFieldApi.trim()}"]`);
+                    console.log(sourceElement.value)
+                    if (sourceElement) {
+                        this.sections.forEach(section => {
+                            section.columns.forEach(column => {
+                                column.fields.forEach(field => {
+                                    if (field.apiName === 'Gift_Card_Service__c') {
+                                        field.required = sourceElement.value == 'New' ? false : true;
+                                    }
+                                });
+                            });
+                        });
+                    }
+                }
                 if (fieldName == 'DisableReminderClose__c') {
                     this.toggleStatus = fieldValue
                     if (fieldValue) { // IF TRUE
@@ -272,7 +333,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                         });
                     }
                 }
-
                 if (sectionVisibilityConfig[fieldName]) {
                     const configs = sectionVisibilityConfig[fieldName][fieldValue] || sectionVisibilityConfig[fieldName].default;
                     if (configs) {
@@ -284,20 +344,14 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                     }
                 }
             });
-
             // Depreciated: fieldsData['Origin'].value == 'Web' ? this.handleSectionVisibility('System_Information','Show') : this.handleSectionVisibility('System_Information','Hide')
-
             /** This Method will override Required property for System Admin and make all fields on form as Editable */
-
             this.overrideAdminVisibility();
             this.caseStatus && this.readOnlyCaseStatus.includes(this.caseStatus) && this.recordId ? (this.triggerReadOnly = true) : console.log("No Match");
-
             /** Auto populate Account Id */
-
             if (this.accountId) {
                 this.fetchContacts();
                 const createContactHolder = this.template.querySelector('.exclusivity-show[data-recid="createContactHolder"]');
-
                 if (createContactHolder) {
                     // Bugfix: Keep it hidden in case of Edit Mode
                     let showNewContact = this.recordId ? newContactVisibility["Edit"] : newContactVisibility["New"];
@@ -305,13 +359,10 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 }
             }
         }
-
         //Bugfix - Closed status validation to auto apply on load with Closed Status
         triggerClosedStatusValidation ? this.handleCaseCloseValidation(true) : console.log("No Update to Validation");
     }
-
     /** This method overides disabled/readonly for System Administrators to make changes */
-
     overrideAdminVisibility() {
         if (this.userProfileName == "System Administrator") {
             let allFields = this.template.querySelectorAll("lightning-input-field");
@@ -321,9 +372,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             this.overrideFlag = true;
         }
     }
-
     /** Method implemented to make all fields read only */
-
     makeCaseReadOnly() {
         let allFields = this.template.querySelectorAll("lightning-input-field");
         allFields.forEach((fieldX) => {
@@ -331,18 +380,14 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
         });
         this.isReadOnly = true;
     }
-
     // Dynamic Form JS Handlers Begin
-
     /** Method triggered on all fields change and refer field mapper to trigger reactivity on UI
      * Capture previous value and current value
      * Remove fields based on previous value
      * Add new fields on UI
      * Trigger UI Reactivity
      */
-
     fieldChangeHandler(event) {
-
         if (event.target.fieldName == "Status" && event.target.value != "Closed" && this.customStatusResetRequiredValidationFlag) {
             this.handleCaseCloseValidation(false);
         }
@@ -360,32 +405,26 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 this.previousPicklistValue = this.currentPicklistValue;
                 this.currentPicklistValue = event.target.value; // Bugfix: Added checkbox support detail -> target
             }
-
             this.recordsData[event.target.fieldName] = event.target.value; // Bugfix: Added checkbox support detail -> target
-
             // Fields to Add
             const fieldsData = this.finalValueChangeMapper[event.target.fieldName][0][this.currentPicklistValue];
             // Fields to Remove
             const fieldsDataToRemove = this.finalValueChangeMapper[event.target.fieldName][0][this.previousPicklistValue];
             // Add & Remove Fields Logic Begin
             this.sectionIndex = this.sectionIndexMapper[event.target.fieldName];
-
             this.previousPicklistValue != this.currentPicklistValue && fieldsDataToRemove != undefined && fieldsDataToRemove != null
                 ? this.removeFields(this.sections[this.sectionIndex].columns[1], fieldsDataToRemove)
                 : console.log("No Data to Remove");
             fieldsData != undefined && fieldsData != null ? this.addFieldsToColumn(this.sections[this.sectionIndex].columns[1], fieldsData) : console.log("No Data to Add");
             // Add & Remove Fields Logic End
-
             /** Below logic is conditional and need to be implemented as per requirements
              * API Name == <<Required API Name>> && Its Field Value on UI == <<Required Value>> ? Show : Hide [Required Section Key]
              *
              * Example: Origin is API Name and Web is Value
              *
              */
-
             const fieldName = event.target.fieldName;
             const fieldValue = event.target.value;
-
             if (fieldName == 'Status') {
                 //this.toggleStatus = false
                 // Update renderCustomHtml where apiName is "Status"
@@ -410,17 +449,16 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                         });
                     });
                 }
-
                 const fieldapi = 'Gift_Card_Service__c';
                 const targetElement = this.template.querySelector(`[data-name="${fieldapi.trim()}"]`);
                 if (targetElement) {
                     targetElement.required = fieldValue == 'New' ? false : true;
                 }
             }
-
             if (fieldName == 'Department__c') {
                 const sourceFieldApi = 'Status';
                 const sourceElement = this.template.querySelector(`[data-name="${sourceFieldApi.trim()}"]`);
+                console.log(sourceElement.value)
                 if (sourceElement) {
                     this.sections.forEach(section => {
                         section.columns.forEach(column => {
@@ -433,10 +471,8 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                     });
                 }
             }
-
             if (sectionVisibilityConfig[fieldName]) {
                 const configs = sectionVisibilityConfig[fieldName][fieldValue] || sectionVisibilityConfig[fieldName].default;
-
                 if (configs) {
                     configs.forEach((config) => {
                         this.handleSectionVisibility(config.section, config.action);
@@ -447,20 +483,16 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             }
             //Deprecated: event.target.fieldName == 'Origin' && event.target.value == 'Web' ? this.handleSectionVisibility('System_Information','Show') : event.target.fieldName == 'Origin' && event.target.value != 'Web' ? this.handleSectionVisibility('System_Information','Hide') : console.log('No Origin Changed')
             /** This Method will override Required property for System Admin and make all fields on form as Editable even if onchange handler brings read only */
-
             this.overrideAdminVisibility();
         }
-
         /** Custom Validaton */
         if (event.target.fieldName == "Status" && event.target.value == "Closed") {
             this.handleCaseCloseValidation(true);
         }
     }
-
     /** This method handles functinality related to Disable toggle on Awaiting External */
     async changeToggle(event) {
         this.toggleStatus = event.target.checked
-
         if (this.toggleStatus == true) {
             const result = await LightningConfirm.open({
                 message: 'Are you sure you want to disable the "Awaiting External Response" email. Please confirm  to disable all "Awaiting External Response" reminder emails, and prevent auto-closure of the Case',
@@ -515,7 +547,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 console.log(`Required Field: ${field.trim()}`);
                 // Manipulate DOM Conditionally using Data Id Attributes
                 const element = this.template.querySelector(`[data-name="${field.trim()}"]`);
-
                 if (element) {
                     element.required = flag;
                     this.customStatusResetRequiredValidationFlag = flag;
@@ -525,11 +556,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** This method finds the Section from UI via Class Selector and appends and removes slds-hide class */
-
     handleSectionVisibility(key, mode) {
         this.elemKey = ".exclusivity-hide[data-recid=" + key + "]";
         const section = this.template.querySelector(this.elemKey);
-
         if (section) {
             mode == "Hide" ? section.classList.add("slds-hide") : mode == "Show" ? section.classList.remove("slds-hide") : console.log("Invalid Mode");
         }
@@ -544,7 +573,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** This method is used to push conditional fields on UI based on On Change field handler */
-
     addFieldsToColumn(column, fields) {
         fields.forEach((field) => {
             // Check if the field already exists
@@ -555,9 +583,7 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     // Dynamic Form JS Handlers End
-
     /** Edit Icon button to provide support for flexi pages - can be deprecated */
-
     async editHandler() {
         if (this.userProfileName == "System Administrator") {
             this.isReadOnly = false;
@@ -573,7 +599,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** This is used to fetch the contact record type id and name defined in field mapper */
-
     fetchRecordTypes() {
         getRecordTypeByName({ recordTypeName: this.defaultContactRecordType }).then((result) => {
             this.selectedRecordTypeId = result[0] ? result[0].Id : null;
@@ -582,19 +607,16 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** Distribute fields in Contact creation left columns */
-
     get leftColumnFields() {
         return this.distributeFields().left;
     }
 
     /** Distribute fields in Contact creation right columns */
-
     get rightColumnFields() {
         return this.distributeFields().right;
     }
 
     /** Method implemented to evenly distribute fields in left and right 2 column layout for contact */
-
     distributeFields() {
         const fields = fieldMapperContact.default;
         const left = [];
@@ -606,10 +628,8 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 right.push(field);
             }
         });
-
         const cleanLeft = left.filter((field) => Object.keys(field).length > 0);
         const cleanRight = right.filter((field) => Object.keys(field).length > 0);
-
         return { left: cleanLeft, right: cleanRight };
     }
 
@@ -617,7 +637,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      * Account chnage -> Trigger latest contacts fetch
      * Contact change -> Maps id to hidden element on UI to save contact in Case record
      */
-
     handleFieldChange(event) {
         if (event.target.fieldName === "AccountId") {
             this.handleAccountChange(event);
@@ -629,7 +648,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** Account Chnage Handler */
-
     handleAccountChange(event) {
         this.accountId = event.target.value;
         this.contactId = null; // Reset selected contact when changing account
@@ -643,10 +661,8 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** this will fetch contacts by making a server call on Account Contact Relationship with Active true */
-
     fetchContacts() {
         this.contactOptions = [];
-
         if (this.accountId) {
             getContacts({ accountId: this.accountId })
                 .then((result) => {
@@ -664,25 +680,21 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** contact change handler */
-
     handleContactChange(event) {
         this.contactId = event.detail.value;
     }
 
     /** method implemented to open contact creation modal - reactivity on UI */
-
     handleNewContactClick() {
         this.isModalOpen = true; // Open the modal when clicking the "+" icon
     }
 
     /** method implemented to close the modal opened on UI for contact success */
-
     closeModal() {
         this.isModalOpen = false;
     }
 
     /** Lightning record edit form submit handler to show laoders and submits the form */
-
     @api
     handleFormSubmit(event) {
         console.log("submitting form");
@@ -694,13 +706,11 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** Method called when contact is submitted and enable loader and form will be submitted automatically */
-
     handleContactFormSubmit(event) {
         this.isContactLoading = true;
     }
 
     /** success form submit handler */
-
     @api
     handleSuccess(event) {
         this.isLoading = false; // Stop loader if form has errors
@@ -728,11 +738,9 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      * @param {*} event
      * Handling the Cancel button on the form
      */
-
     @api
     handleCaseCancel(event) {
         /** For Edit Mode Cancel button will behave exactly same as Success Button in Navigation */
-
         if (this.recordId) {
             const caseId = this.recordId;
             this.isModalOpen = false;
@@ -750,21 +758,15 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 detail: this.recordId // undefined
             });
             /** From Here Events can be published and catch handlers are implemented in Aura Component as placeholders */
-
             /** Hanlde Navigation */
-
             this.navigateToRecord(this.recordId);
         }
     }
-
     /** error form submit handler */
-
     async handleFormError(event) {
         this.isLoading = false; // Stop loader if form has errors
         this.isContactLoading = false;
-
         let message = "An error occurred while saving the record. Please try again later.";
-
         if (event.detail && event.detail.output && event.detail.output.errors && event.detail.output.errors.length > 0) {
             message = event.detail.output.errors.map((error) => error.message).join(", ");
         } else if (event.detail && event.detail.output && event.detail.output.fieldErrors) {
@@ -774,7 +776,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
                 })
                 .join(", ");
         }
-
         await LightningAlert.open({
             message: message,
             theme: "error", // a red theme intended for error states
@@ -784,7 +785,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** comtact creation success handler */
-
     async handleContactSuccess(event) {
         let contactRecordCreated = event.detail.id;
         this.isContactLoading = false;
@@ -796,20 +796,17 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** Cancel button handler for contact modal */
-
     handleContactCancel(event) {
         this.isContactLoading = false;
         this.closeModal();
     }
 
     /** Error toast method */
-
     handleError(event) {
         this.showErrorToast(event.detail.message);
     }
 
     /** Success Toast message */
-
     showSuccessToast(message) {
         this.dispatchEvent(
             new ShowToastEvent({
@@ -821,7 +818,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** Eror Toast method */
-
     showErrorToast(message) {
         this.dispatchEvent(
             new ShowToastEvent({
@@ -833,7 +829,6 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     /** Navigation handler */
-
     navigateToRecord(recordId) {
         console.log("Navigating method " + this.isConsoleNavigation);
         if (this.isConsoleNavigation) {
@@ -850,21 +845,16 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
      * In Console apps -> When closing the tab or subtabs, componet caches the state which might caused close fallback to trigger
      * So we are doing the workaround. (Setting the window location which forces browser to reload)
      */
-
     async closeTabSubtabsAndNavigate(recordId) {
         const tabInfo = await getFocusedTabInfo();
-
         console.log("tabInfo " + JSON.stringify(tabInfo));
-
         if (recordId) {
             /** New Case Success Block with Record Id */
-
-            if (tabInfo.title.includes("New")) {
+            if (tabInfo.title.includes("New") || tabInfo.title.includes("Loading...")) {
                 /** Navigate to Newly created case */
                 this.navigateToCaseRecord(recordId);
                 await closeTab(tabInfo.tabId);
             }
-
             if (tabInfo.title.includes("Edit")) {
                 await closeTab(tabInfo.tabId);
             } else {
@@ -879,13 +869,11 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
             }
         } else {
             console.log("Cancel Action  " + tabInfo.title);
-
-            if (tabInfo.title.includes("New")) {
+            if (tabInfo.title.includes("New") || tabInfo.title.includes("Loading...")) {
                 await closeTab(tabInfo.tabId);
             }
         }
     }
-
     /** This method is for Navigating to newly created Case using Navigation Mixing module */
     navigateToCaseRecord(recordId) {
         // Navigate to the Account home page
