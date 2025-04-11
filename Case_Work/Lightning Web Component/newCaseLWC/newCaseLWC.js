@@ -565,12 +565,39 @@ export default class NewCaseLWC extends NavigationMixin(LightningElement) {
     }
 
     // Method to remove fields from a column
-    removeFields(column, fieldsToRemove) {
+    removeFields_X(column, fieldsToRemove) {
         column.fields = column.fields.filter((field) => {
             // Check if the field should be kept (not in fieldsToRemove)
             return !fieldsToRemove.some((removeField) => removeField.apiName === field.apiName);
         });
     }
+
+    removeFields(column, fieldsToRemove) {
+        const fieldsToRemoveQueue = [...fieldsToRemove];
+
+        while (fieldsToRemoveQueue.length > 0) {
+            const fieldToRemove = fieldsToRemoveQueue.shift();
+
+            // Remove from UI
+            column.fields = column.fields.filter(
+                (field) => field.apiName !== fieldToRemove.apiName
+            );
+
+            // Check if this field is a key in valueChangeMapper (i.e., it may have added other fields based on its value)
+            if (this.finalValueChangeMapper[fieldToRemove.apiName]) {
+                const fieldValue = this.recordsData?.[fieldToRemove.apiName];
+                const dependentFieldsConfig = this.finalValueChangeMapper[fieldToRemove.apiName][0]?.[fieldValue];
+
+                if (dependentFieldsConfig) {
+                    fieldsToRemoveQueue.push(...dependentFieldsConfig);
+                }
+
+                // Also, optionally clean up the stale value from recordsData
+                delete this.recordsData[fieldToRemove.apiName];
+            }
+        }
+    }
+
 
     /** This method is used to push conditional fields on UI based on On Change field handler */
     addFieldsToColumn(column, fields) {
