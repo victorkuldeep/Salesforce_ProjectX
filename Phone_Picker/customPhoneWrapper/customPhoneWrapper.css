@@ -1,0 +1,7 @@
+.phone-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.2rem;
+    background-color: white;
+    padding: 2px;
+}

@@ -1,0 +1,13 @@
+<template>
+    <div class="phone-wrapper">
+        <!-- Embedded phone picker -->
+        <c-custom-phone-picker input-elem={label} mandatory="true" default-country="in"
+            onvaluechange={handleCustomPhone}>
+        </c-custom-phone-picker>
+        <template if:true={enableSave}>
+            <lightning-button-icon icon-name="utility:save" alternative-text="Save" variant="container" title="Save"
+                size="small" onclick={handleSave}>
+            </lightning-button-icon>
+        </template>
+    </div>
+</template>
