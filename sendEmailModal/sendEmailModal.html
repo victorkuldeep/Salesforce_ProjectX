@@ -1,0 +1,61 @@
+<template>
+    <header class="slds-modal__header">
+        <h2 class="slds-text-heading_medium">Case Email Composer</h2>
+    </header>
+
+    <div class="slds-modal__content slds-p-around_medium">
+        
+        <lightning-input label="From" value={orgWideAddress} disabled></lightning-input>
+
+        <lightning-input label="To" value={toAddress} placeholder="comma/semi-colon separated emails"
+                         onchange={handleToEmailAddress}></lightning-input>
+        <lightning-input label="Cc" value={ccAddress} placeholder="comma/semi-colon separated emails"
+                         onchange={handleCcEmailAddress}></lightning-input>
+        <lightning-input label="Bcc" value={bccAddress} placeholder="comma/semi-colon separated emails"
+                         onchange={handleBccEmailAddress}></lightning-input>
+        
+        <lightning-combobox label="Email Template Folder" options={getTempList}
+                            onchange={selectedEmailTempFolder} class="validate"></lightning-combobox>
+
+        <lightning-combobox label="Email Template" options={emailTempList}
+                            onchange={selectedEmailTemp} class="validate"></lightning-combobox>
+
+        <lightning-input label="Subject" value={subject} onchange={handleSubject}></lightning-input>
+
+        <lightning-input-rich-text value={body} onchange={handleBodyChange}></lightning-input-rich-text>
+
+        <lightning-file-upload label="Attach Files"
+                               name="uploadFile"
+                               accept={acceptedFormats}
+                               record-id={recordId}
+                               onuploadfinished={handleUploadFinished}
+                               multiple></lightning-file-upload>
+
+        <template if:true={uploadFile}>
+            <template for:each={uploadFile} for:item="file" for:index="index">
+                <lightning-pill key={file.contentVersionId}
+                                label={file.name}
+                                data-index={index}
+                                data-id={file.contentVersionId}
+                                onremove={fileRemove}>
+                </lightning-pill>
+            </template>
+        </template>
+    </div>
+
+    <footer class="slds-modal__footer">
+    <lightning-button 
+        variant="neutral" 
+        label="Cancel" 
+        onclick={cancelPopup}>
+    </lightning-button>
+
+    <lightning-button 
+        class="slds-m-left_small" 
+        variant="brand" 
+        label="Send Email" 
+        onclick={sendEmail}>
+    </lightning-button>
+</footer>
+
+</template>
