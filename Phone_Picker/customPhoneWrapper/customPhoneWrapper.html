@@ -1,13 +1,33 @@
+<!--
+  @description       : 
+  @author            : Kuldeep Singh
+  @group             : 
+  @last modified on  : 10-25-2025
+  @last modified by  : Kuldeep Singh
+-->
 <template>
     <div class="phone-wrapper">
         <!-- Embedded phone picker -->
-        <c-custom-phone-picker input-elem={label} mandatory="true" default-country="in"
-            onvaluechange={handleCustomPhone}>
-        </c-custom-phone-picker>
-        <template if:true={enableSave}>
-            <lightning-button-icon icon-name="utility:save" alternative-text="Save" variant="container" title="Save"
-                size="small" onclick={handleSave}>
-            </lightning-button-icon>
+        <template if:true={renderPhonePicker}>
+            <c-custom-phone-picker
+                input-elem={label}
+                mandatory="true"
+                default-country={isoCode}
+                phone-number={phoneNumber}
+                onvaluechange={handleCustomPhone}
+            >
+            </c-custom-phone-picker>
+            <template if:true={enableSave}>
+                <lightning-button-icon
+                    icon-name="utility:save"
+                    alternative-text="Save"
+                    variant="container"
+                    title="Save"
+                    size="small"
+                    onclick={handleSave}
+                >
+                </lightning-button-icon>
+            </template>
         </template>
     </div>
 </template>

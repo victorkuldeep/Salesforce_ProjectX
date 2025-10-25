@@ -5,12 +5,12 @@ export default class CustomPhonePicker extends LightningElement {
     @api inputElem;
     @api mandatory = false;
     @api defaultCountry = "in";
-
+    @api phoneNumber = "";
     fieldLabel;
     isLoadScript = false;
     dialCode = "91"; // Initial Country default dial code
-    phoneNumber = "";
     debounceTimer;
+    telInstance;
 
     connectedCallback() {
         this.fieldLabel = this.inputElem ?? "Enter Phone Number";
@@ -39,12 +39,19 @@ export default class CustomPhonePicker extends LightningElement {
 
     initFlagpicker() {
         const input = this.template.querySelector("[data-id=phone]");
-        window.intlTelInput(input, {
+        this.telInstance = window.intlTelInput(input, {
             separateDialCode: true,
             excludeCountries: ["il"],
             preferredCountries: ["us", "gb", "in"],
-            initialCountry: this.defaultCountry
+            initialCountry: this.defaultCountry,
+            nationalMode: true, // <-- Add this
+            autoPlaceholder: "polite" // <-- Add this
         });
+        const countryData = this.telInstance.getSelectedCountryData();
+        console.log("Country data: ", JSON.stringify(countryData));
+        this.dialCode = countryData.dialCode;
+        console.log("Initial Phone Number: " + this.phoneNumber);
+        this.telInstance.setNumber(`${this.phoneNumber}`);
         input.addEventListener("countrychange", this.handleCountryChange.bind(this));
     }
 
@@ -72,6 +79,8 @@ export default class CustomPhonePicker extends LightningElement {
         const input = event.target;
         const intlTelInputInstance = window.intlTelInputGlobals.getInstance(input);
         const countryData = intlTelInputInstance.getSelectedCountryData();
+        console.log(intlTelInputInstance.getNumber());
+        console.log("Country data: ", JSON.stringify(countryData));
         this.dialCode = countryData.dialCode;
         const valueChangeEvent = new CustomEvent("valuechange", {
             detail: {
